@@ -1,5 +1,5 @@
 # SF-Tools
-## sfcheck.php
+## SF_Tools.php
 A PHP Class for returning the status of a Satifactory Dedicated Server
 
 ## How to run
