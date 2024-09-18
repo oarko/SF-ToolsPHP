@@ -73,8 +73,6 @@ Set the Advanced Game Settings: (uses $this->advanced_game_settings)
 $sfTools->set_advanced_game_settings();
 ```
 
-### Retrieving Advanced Game Settings
-
 ### Error Handling
 
 Check if there was an error during the last operation:
@@ -118,7 +116,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Authors
 
-- **Your Name** - *Initial work* - [Oarko](https://github.com/Oarko)
+- oarko - *Initial work* - [dopeghoti](https://github.com/dopeghoti)
 
 ## Acknowledgments
 
