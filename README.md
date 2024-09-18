@@ -1,6 +1,3 @@
-oarko: using SF_Tools.php can you write a readme.md for github
-
-GitHub Copilot: Sure, here's a [`README.md`](command:_github.copilot.openRelativePath?%5B%7B%22scheme%22%3A%22file%22%2C%22authority%22%3A%22%22%2C%22path%22%3A%22%2Fmnt%2Fhtml%2FREADME.md%22%2C%22query%22%3A%22%22%2C%22fragment%22%3A%22%22%7D%2C%2229d2738a-609e-4d82-a8bd-b6595b77ed40%22%5D "/mnt/html/README.md") for your [`SF_Tools.php`](command:_github.copilot.openRelativePath?%5B%7B%22scheme%22%3A%22file%22%2C%22authority%22%3A%22%22%2C%22path%22%3A%22%2Fmnt%2Fhtml%2FSF_Tools.php%22%2C%22query%22%3A%22%22%2C%22fragment%22%3A%22%22%7D%2C%2229d2738a-609e-4d82-a8bd-b6595b77ed40%22%5D "/mnt/html/SF_Tools.php") file:
 
 ```markdown
 # SF_Tools
