@@ -1,9 +1,6 @@
 <?php
-$api_key = "";
-$server_address = "";
-$server_port = 7777;
+require 'config.php';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
