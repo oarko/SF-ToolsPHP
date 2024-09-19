@@ -1,4 +1,5 @@
 <?php
+
 class SF_Tools {
     const CURRENT_REST_API_VERSION = 1;
     const PROTOCOL_VERSION = 1;
@@ -15,6 +16,7 @@ class SF_Tools {
     public $modded = null;
     public $version = null;
     public $api_token = null;
+    private $valid_api = false;
 
     public $game_state = null;
     public $server_options = null;
@@ -29,9 +31,20 @@ class SF_Tools {
     public $errormsg = null;
     
 
-    public $responce = [];
-    public $rawResponse = null;
+    public $responce = null;
+    public $responce_code = null;
+    private $rawResponse = null;
 
+
+    public $PrivilageLevel = 0;
+    
+    private $PrivilageLevels = [
+        0 => 'NotAuthenticated',
+        1 => 'Client',
+        2 => 'Administator',
+        3 => 'InitialAdmin',
+        4 => 'APIToken'
+    ];
 
     private $error_responce = [
         'error' => 'Server is offline',
@@ -66,28 +79,25 @@ class SF_Tools {
         }
     }
     
-    private function set_curl_options(){
-        if($this->insecure){
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYHOST, false);
-        }else{
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYPEER, true);
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYHOST, true);
-        }
-        curl_setopt($this->server_link, CURLOPT_URL, $this->url);
-        curl_setopt($this->server_link, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($this->server_link, CURLOPT_VERBOSE, true);
-        curl_setopt($this->server_link, CURLOPT_POST, true);
-    }
     
     public function __destruct() {
         curl_close($this->server_link);
     }
 
-    // set the api key used for authentication
-    public function set_api_key($api_key){
-        $this->api_token = $api_key;
-    }
+
+    /**************************************************************************************************************************************
+     * Server Functions
+     * 
+     * 
+     * set_SSL_varify() => set curl to varify the server ssl certificate
+     * change_server() => change the server and port
+     * set_curl_options() => sets the curl options for the server connection (internal function)
+     * validate_url() => validates the url (internal function)
+     * fetch_from_api() => fetch data from the api (internal function)
+     * 
+     **************************************************************************************************************************************/
+
+    
 
     // set curl to varify the server ssl certificate
     public function set_SSL_varify($varify = false){
@@ -99,8 +109,24 @@ class SF_Tools {
     public function change_server($server, $port = 7777){
         $this->server = $server;
         $this->port = $port;
-        $this->url = "https://$server:$port/aget_server_game_statepi/v1";
+        $this->url = "https://$server:$port/api/v1";
         $this->set_curl_options();
+    }
+
+    private function set_curl_options(){
+        if($this->insecure){
+            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYHOST, false);
+        }else{
+            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYHOST, true);
+        }
+        //curl_setopt($this->server_link, CURLOPT_HEADER  , true);
+        //curl_setopt($this->server_link, CURLOPT_NOBODY  , false);
+        curl_setopt($this->server_link, CURLOPT_URL, $this->url);
+        curl_setopt($this->server_link, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($this->server_link, CURLOPT_VERBOSE, true);
+        curl_setopt($this->server_link, CURLOPT_POST, true);
     }
 
     // validate the url (internal function)
@@ -114,21 +140,244 @@ class SF_Tools {
 
     // fetch data from the api (internal function)
     private function fetch_from_api($data){
-        curl_setopt($this->server_link, CURLOPT_HTTPHEADER, [
-            "Authorization: $this->api_token",
-            "Content-Type: application/json"
-            ]);
+        if($this->valid_api){
+                curl_setopt($this->server_link, CURLOPT_HTTPHEADER, [
+                    "Authorization: $this->api_token",
+                    "Content-Type: application/json"
+                    ]);
+            }else{
+                curl_setopt($this->server_link, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
+            }
             curl_setopt($this->server_link, CURLOPT_POSTFIELDS, $data);
-            $response = curl_exec($this->server_link);
-
+            $this->responce = curl_exec($this->server_link);
+            $this->responce_code = curl_getinfo($this->server_link, CURLINFO_HTTP_CODE);
             if (curl_errno($this->server_link)) {
                 $this->error = true;
-                $this ->errormsg = curl_error($this->server_link);
                 return false;
             } else {
-                return $response;
+                return true;
             }
     }
+
+
+    /**************************************************************************************************************************************
+     * Authentication Functions
+     * 
+     * set_api_key($api_key) => set the api key used for authentication
+     * verify_api_key() => verify the api key (internal function) 
+     * passwordlessLogin() => login with out a password as a client
+     * passwordLogin($password) => login with a password as admin or client
+     * clameServer($serverName, $password) => clame the server as admin (only works on unclamed servers)
+     * setClientPassword($password) => set the client password
+     * setAdminPassword($password) => set the admin password 
+     * 
+     * *************************************************************************************************************************************/
+
+
+     // set the api key used for authentication
+     public function set_api_key($api_key){
+        $this->api_token = $api_key;
+        $this->valid_api = $this->verify_api_key();
+    }
+
+    private function verify_api_key(){
+        if(!$this->api_token){
+            $this->error = true;
+            $this->errormsg = "No API key set";
+            return false;
+        }else{
+            $data = json_encode(["function" => "VerifyAuthentication"]);
+            $this->fetch_from_api($data);
+            $this->responce_code = curl_getinfo($this->server_link, CURLINFO_HTTP_CODE);
+            if($this->responce_code == 200){
+                return true;
+            }else{
+                $this->error = true;
+                $this->errormsg = "Invalid API key";
+                return false;
+            }
+        }
+    }
+
+    public function passwordlessLogin(){
+        if(isset($this->api_token)){
+            $this->api_token = null;
+            $this->valid_api = false;
+        }
+        $data = json_encode([
+            "function" => "PasswordlessLogin",
+            "data" => [
+                "minimumPrivilegeLevel" => $this->PrivilageLevels[1]
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
+            $this->valid_api = $this->verify_api_key();
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function passwordLogin($password){
+        if(isset($this->api_token)){
+            $this->api_token = null;
+            $this->valid_api = false;
+        }
+        $data = json_encode([
+            "function" => "PasswordlessLogin",
+            "data" => [
+                "minimumPrivilegeLevel" => $this->PrivilageLevels[1],
+                "Password" => $password
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
+            $this->valid_api = $this->verify_api_key();
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function clameServer($serverName, $adminPassword){
+        if(isset($this->api_token)){
+            $this->api_token = null;
+            $this->valid_api = false;
+        }
+        $data = json_encode([
+            "function" => "ClaimServer",
+            "data" => [
+                "ServerName" => $serverName,
+                "AdminPassword" => $adminPassword
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
+            $this->valid_api = $this->verify_api_key();
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function setClientPassword($password){
+        $data = json_encode([
+            "function" => "SetClientPassword",
+            "data" => [
+                "Password" => $password
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function setAdminPassword($password){
+        $data = json_encode([
+            "function" => "SetAdminPassword",
+            "data" => [
+                "Password" => $password
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+
+    /**************************************************************************************************************************************
+     * Server Functions
+     * 
+     * 
+     * renameServer($serverName) => rename the server ro $serverName
+     * SetAutoLoadSession($sessionName) => set the session that autoloads on server start
+     * runConsoleCommand($command) => run a console command
+     * shutdown() => shutdown the server. If the server is running as a service it will restart
+     * get_server_state() => gets information about the server. (see below for details)
+     * get_server_options() => gets the server options and sets the $SF-Tools->server_options. (see below for details)
+     * set_server_options() => sets the server options from the $SF-Tools->server_options array
+     * get_advanced_game_settings() => gets the advanced game settings and sets the $SF_Tools->advanced_game_settings array. (see below for details)
+     * set_advanced_game_settings() => sets the advanced game settings from the $SF-Tools->advanced_game_settings array
+     * 
+     **************************************************************************************************************************************/
+
+
+    public function renameServer($serverName){
+        $data = json_encode([
+            "function" => "RenameServer",
+            "data" => [
+                "ServerName" => $serverName
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function setAutoLoadSession($sessionName){
+        $data = json_encode([
+            "function" => "SetAutoLoadSession",
+            "data" => [
+                "SessionName" => $sessionName
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function runConsoleCommand($command){
+        $data = json_encode([
+            "function" => "RunCommand",
+            "data" => [
+                "Command" => $command
+                ]
+            ]);
+        if($this->fetch_from_api($data)){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function shutdown(){
+        $data = json_encode([
+            "function" => "ShutdownServer"
+            ]);
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+
+    
 
     /************************************************************************************************************************************** 
     * generates an array of the server state containing the following
@@ -146,7 +395,7 @@ class SF_Tools {
     * [autoLoadSessionName] => [name of the session that will be loaded when the server starts]
     **************************************************************************************************************************************/
 
-    public function get_game_state(){
+    public function get_server_state(){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -154,9 +403,8 @@ class SF_Tools {
             return -1;
         } 
         $data = json_encode(["function" => "QueryServerState"]);
-        $response = $this->fetch_from_api($data);
-        if($response){
-            $this->game_state = json_decode($response, true)["data"]["serverGameState"];
+        if($this->fetch_from_api($data)){
+            $this->game_state = json_decode($this->responce, true)["data"]["serverGameState"];
         }else{
             $this->error = true;
             $this->errormsg = "No Responce from server";
@@ -185,9 +433,8 @@ class SF_Tools {
             return -1;
         } 
         $data = json_encode(["function" => "GetServerOptions"]);
-        $response = $this->fetch_from_api($data);
-        if($response){
-            $this->server_options = json_decode($response, true)["data"]['serverOptions'];
+        if($this->fetch_from_api($data)){
+            $this->server_options = json_decode($this->responce, true)["data"]['serverOptions'];
         }else{
             $this->error = true;
             $this->errormsg = "No Responce from server";
@@ -219,7 +466,7 @@ class SF_Tools {
         $data = json_encode($jsonarray);
         $response = $this->fetch_from_api($data);
         if(!$response){
-            return true
+            return true;
         }else{
             $this->error = true;
             $this->errormsg = json_decode($response, true);
@@ -293,10 +540,129 @@ class SF_Tools {
         $data = json_encode($jsonarray);
         $response = $this->fetch_from_api($data);
         if(!$response){
-            return true
+            return true;
         }else{
             $this->error = true;
             $this->errormsg = json_decode($response, true);
+            return false;
+        }
+    }
+
+
+
+    /**************************************************************************************************************************************
+     * Session Functions
+     * 
+     * get_sessions() => get a list of all the sessions on the server
+     * download_save($save_name) => download the save file $save_name
+     * upload_save($save_file, $save_name, $filesize, $LoadSaveGame = false, $EnableAdvancedGameSettings = false) => upload the save file $save_file with the name $save_name
+     * delete_save($save_name) => delete the save file $save_name
+     * 
+     **************************************************************************************************************************************/
+
+
+
+    public function get_sessions(){
+        $this->error = 0;
+        if($this->server_state < 1){
+            $this->error = true;
+            $this->errormsg = "Server is offline";
+            return -1;
+        } 
+        $data = json_encode(["function" => "EnumerateSessions"]);
+        if($this->fetch_from_api($data)){
+            $this->responce = json_decode($this->responce, true)["data"];
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "No Responce from server";
+            return false;
+        }
+    }
+
+    public function download_save($save_name){
+        $this->error = 0;
+        if($this->server_state < 1){
+            $this->error = true;
+            $this->errormsg = "Server is offline";
+            return -1;
+        } 
+        $jsonarray = [
+            'function' => 'DownloadSaveGame',
+            'data'  => [
+                "SaveName" => $save_name
+            ]
+            
+        ];
+        $data = json_encode($jsonarray);
+        if($this->fetch_from_api($data)){
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . $save_name . '.sav"');
+            echo $this->responce;
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = json_decode($this->responce, true);
+            return false;
+        }
+    }
+
+    public function upload_save($save_file, $save_name, $filesize, $LoadSaveGame = false, $EnableAdvancedGameSettings = false){
+        $this->error = 0;
+        if($this->server_state < 1){
+            $this->error = true;
+            $this->errormsg = "Server is offline";
+            return -1;
+        }else if(!ini_get('file_uploads')){
+            $this->error = true;
+            $this->errormsg = "File uploads are disabled";
+            return -1;
+        }
+        $jsonarray = [
+            'function' => 'UploadSaveGame',
+            'data'  => [
+                "SaveName" => $save_name,
+                "LoadSaveGame" => $LoadSaveGame,
+                "EnableAdvancedGameSettings" => $EnableAdvancedGameSettings,
+            ]
+        ];
+        $data = json_encode($jsonarray);
+        $filedata = file_get_contents($save_file);
+        curl_setopt($this->server_link, CURLOPT_HEADER, true);
+        curl_setopt($this->server_link, CURLOPT_HTTPHEADER, [ "Authorization: $this->api_token","Content-Type: multipart/form-data"]);
+        curl_setopt($this->server_link ,CURLOPT_POSTFIELDS, ['data' => $data, 'saveGameFile' => @$save_file]);
+        curl_setopt($this->server_link, CURLOPT_INFILESIZE, $filesize);
+        curl_exec($this->server_link);
+        $this->responce_code = curl_getinfo($this->server_link, CURLINFO_HTTP_CODE);
+        if(curl_exec($this->server_link)){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = json_decode($this->responce, true);
+            return false;
+        }
+    }
+
+    public function delete_save($save_name){
+        $this->error = 0;
+        if($this->server_state < 1){
+            $this->error = true;
+            $this->errormsg = "Server is offline";
+            return -1;
+        } 
+        $jsonarray = [
+            'function' => 'DeleteSaveFile',
+            'data'  => [
+                "SaveName" => $save_name
+            ]
+            
+        ];
+        $data = json_encode($jsonarray);
+        if($this->fetch_from_api($data)){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = json_decode($this->responce, true);
             return false;
         }
     }
@@ -331,8 +697,9 @@ class SF_Tools {
 
     private function Get_LW_server_status() {
         $this->responce = $this->Get_LW_status($this->server, $this->port);
-        $this->server_state = $this->responce['ServerStateRaw'];
-        
+        if(isset($this->responce['ServerStateRaw'])){
+            $this->server_state = $this->responce['ServerStateRaw'];     
+        }   
     }
 
     private function Get_LW_status($address, $port) {
@@ -420,5 +787,6 @@ class SF_Tools {
 
         return $response;
     }
-
 }
+
+?>
