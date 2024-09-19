@@ -53,7 +53,7 @@ changeServer("{server address}", {port default:7777})
 
 #### setAPIkey()
 Set the API key for authentication:
-Application tokens do not expire, and are granted by issuing the command server.GenerateAPIToken in the Dedicated Server console. The generated token can then be passed to the Authentication header with Bearer type to perform any Server API requests on the behalf of the server.
+Application tokens do not expire, and are granted by issuing the command `server.GenerateAPIToken` in the Dedicated Server console. The generated token can then be passed to the Authentication header with Bearer type to perform any Server API requests on the behalf of the server.
 
 ```php
 $sfTools->setAPIkey("Bearer {your_api_key_here}");
