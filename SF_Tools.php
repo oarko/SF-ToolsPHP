@@ -16,11 +16,12 @@ class SF_Tools {
     public $modded = null;
     public $version = null;
     public $api_token = null;
-    private $valid_api = false;
+    private $valid_api = true;
 
     public $game_state = null;
     public $server_options = null;
     public $advanced_game_settings = null;
+    public $sessions = null;
 
     private $server_link;
     private $insecure = false;
@@ -100,13 +101,13 @@ class SF_Tools {
     
 
     // set curl to varify the server ssl certificate
-    public function set_SSL_varify($varify = false){
-        $this->insecure = $varify;
+    public function set_SSL_varify($insecure = false){
+        $this->insecure = $insecure;
         $this->set_curl_options();
     }
 
     // change the server and port
-    public function change_server($server, $port = 7777){
+    public function changeServer($server, $port = 7777){
         $this->server = $server;
         $this->port = $port;
         $this->url = "https://$server:$port/api/v1";
@@ -175,9 +176,9 @@ class SF_Tools {
 
 
      // set the api key used for authentication
-     public function set_api_key($api_key){
+     public function setAPIkey($api_key){
         $this->api_token = $api_key;
-        $this->valid_api = $this->verify_api_key();
+        //$this->valid_api = $this->verify_api_key();
     }
 
     private function verify_api_key(){
@@ -212,7 +213,7 @@ class SF_Tools {
             ]);
         if($this->fetch_from_api($data)){
             $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
-            $this->valid_api = $this->verify_api_key();
+            //$this->valid_api = $this->verify_api_key();
         }else{
             $this->error = true;
             $this->errormsg = "No Responce from server";
@@ -302,14 +303,14 @@ class SF_Tools {
      * 
      * 
      * renameServer($serverName) => rename the server ro $serverName
-     * SetAutoLoadSession($sessionName) => set the session that autoloads on server start
+     * setAutoloadSession($sessionName) => set the session that autoloads on server start
      * runConsoleCommand($command) => run a console command
      * shutdown() => shutdown the server. If the server is running as a service it will restart
-     * get_server_state() => gets information about the server. (see below for details)
-     * get_server_options() => gets the server options and sets the $SF-Tools->server_options. (see below for details)
-     * set_server_options() => sets the server options from the $SF-Tools->server_options array
-     * get_advanced_game_settings() => gets the advanced game settings and sets the $SF_Tools->advanced_game_settings array. (see below for details)
-     * set_advanced_game_settings() => sets the advanced game settings from the $SF-Tools->advanced_game_settings array
+     * getServerState() => gets information about the server. (see below for details)
+     * getServerOptions() => gets the server options and sets the $SF-Tools->server_options. (see below for details)
+     * setServerOptions() => sets the server options from the $SF-Tools->server_options array
+     * getAdvancedGameSettings() => gets the advanced game settings and sets the $SF_Tools->advanced_game_settings array. (see below for details)
+     * setAdvancedGameSettings() => sets the advanced game settings from the $SF-Tools->advanced_game_settings array
      * 
      **************************************************************************************************************************************/
 
@@ -330,7 +331,7 @@ class SF_Tools {
         }
     }
 
-    public function setAutoLoadSession($sessionName){
+    public function setAutoloadSession($sessionName){
         $data = json_encode([
             "function" => "SetAutoLoadSession",
             "data" => [
@@ -395,7 +396,7 @@ class SF_Tools {
     * [autoLoadSessionName] => [name of the session that will be loaded when the server starts]
     **************************************************************************************************************************************/
 
-    public function get_server_state(){
+    public function getServerState(){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -425,7 +426,7 @@ class SF_Tools {
      ***************************************************************************************************************************************/
     
 
-    public function get_server_options(){
+    public function getServerOptions(){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -442,7 +443,7 @@ class SF_Tools {
         }
     }
 
-    public function set_server_options(){
+    public function setServerOptions(){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -464,12 +465,11 @@ class SF_Tools {
             
         ];
         $data = json_encode($jsonarray);
-        $response = $this->fetch_from_api($data);
-        if(!$response){
+        if($this->fetch_from_api($data)){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = json_decode($response, true);
+            $this->errormsg = json_decode($this->responce, true);
         }
     }
 
@@ -492,7 +492,7 @@ class SF_Tools {
      ***************************************************************************************************************************************/
 
 
-    public function get_advanced_game_settings(){
+    public function getAdvancedGameSettings(){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -510,7 +510,7 @@ class SF_Tools {
         }
     }
 
-    public function set_advanced_game_settings(){
+    public function setAdvancedGameSettings(){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -553,16 +553,16 @@ class SF_Tools {
     /**************************************************************************************************************************************
      * Session Functions
      * 
-     * get_sessions() => get a list of all the sessions on the server
-     * download_save($save_name) => download the save file $save_name
-     * upload_save($save_file, $save_name, $filesize, $LoadSaveGame = false, $EnableAdvancedGameSettings = false) => upload the save file $save_file with the name $save_name
-     * delete_save($save_name) => delete the save file $save_name
+     * getSessions() => get a list of all the sessions on the server
+     * downloadSave($save_name) => download the save file $save_name
+     * uploadSave($save_file, $save_name, $filesize, $LoadSaveGame = false, $EnableAdvancedGameSettings = false) => upload the save file $save_file with the name $save_name
+     * deleteSave($save_name) => delete the save file $save_name
      * 
      **************************************************************************************************************************************/
 
 
 
-    public function get_sessions(){
+    public function getSessions(){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -571,7 +571,7 @@ class SF_Tools {
         } 
         $data = json_encode(["function" => "EnumerateSessions"]);
         if($this->fetch_from_api($data)){
-            $this->responce = json_decode($this->responce, true)["data"];
+            $this->sessions = json_decode($this->responce, true)['data']['sessions'];
             return true;
         }else{
             $this->error = true;
@@ -580,7 +580,7 @@ class SF_Tools {
         }
     }
 
-    public function download_save($save_name){
+    public function downloadSave($save_name){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -607,7 +607,7 @@ class SF_Tools {
         }
     }
 
-    public function upload_save($save_file, $save_name, $filesize, $LoadSaveGame = false, $EnableAdvancedGameSettings = false){
+    public function uploadSave($save_file, $save_name, $filesize, $LoadSaveGame = false, $EnableAdvancedGameSettings = false){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -643,7 +643,7 @@ class SF_Tools {
         }
     }
 
-    public function delete_save($save_name){
+    public function deleteSave($save_name){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
