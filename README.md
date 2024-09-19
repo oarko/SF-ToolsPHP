@@ -38,13 +38,13 @@ enables SSL Varification.
 NOTE: enableing SSL varification without a proper Certificate Athority provided certificate for the server will cause a server varification error and the script will not function.
 DEFAULT:FALSE
 ```php
-set_SSL_varify(true)
+$sfTools->set_SSL_varify(true)
 ```
 
 #### chageServer()
 change the server you are connecting to
 ```php
-changeServer("{server address}", {port default:7777})
+$sfTools->changeServer("{server address}", {port default:7777})
 ```
 
 
