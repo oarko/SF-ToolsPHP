@@ -56,7 +56,7 @@ Set the API key for authentication:
 Application tokens do not expire, and are granted by issuing the command `server.GenerateAPIToken` in the Dedicated Server console. The generated token can then be passed to the Authentication header with Bearer type to perform any Server API requests on the behalf of the server.
 
 ```php
-$sfTools->setAPIkey("Bearer {your_api_key_here}");
+$sfTools->setAPIkey({your_api_key_here});
 ```
 
 #### passwordlessLogin()
@@ -238,28 +238,37 @@ $sfTools->downloadSave("myserver save file");
 Upload a save file to the server
 ```php
 <?php
-if(isset($_POST["submit"])) {
-  include 'SF_Tools.php';
-  $sfTools = new SF_Tools("localhost");
-  $sfTools->setAPIkey($myKey);
-  $file = $_FILES["file"]['tmp_name'];
-  $sfTools->upload_save($file, "1.0 is newwww test", $_FILES['file']['size']);
-  print_r($_FILES);
-}else{
+require 'SF_Tools.php';
+include "config.php";
+
+$SF = new SF_Tools("10.12.6.10", 7777);
+$SF->setAPIKey($api_key);
+
+if(isset($_FILES['file'])){
+    $SF->uploadSave($_FILES, $_POST['name']);
+    if($SF->responce_code == 204){
+        header("Location: SF.php");
+    }else{
+        echo "Error: ".$SF->responce_code;
+        print_r($SF->responce);
+    }
+}
 ?>
-<!DOCTYPE html>
+```
+```html
+!DOCTYPE html>
 <html>
 <body>
 
 <form action="upload.php" method="post" enctype="multipart/form-data">
   Select image to upload:
   <input type="file" name="file" id="file">
+  Save Name:<input type="text" name="name" id="name">
   <input type="submit" value="Upload file" name="submit">
 </form>
 
 </body>
-</html>
-<?php } ?>
+</html> 
 ```
 
 
@@ -291,7 +300,7 @@ echo "<pre>";
 
 $sfTools = new SF_Tools("10.12.1.10", 7777, true);
 if(!$sfTools->error){
-  $sfTools->set_api_key("Bearer {your_api_key_here}");
+  $sfTools->set_api_key({your_api_key_here});
   $sfTools->get_server_options();
   $sfTools->set_server_options();
   $sfTools->get_advanced_game_settings();
