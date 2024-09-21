@@ -1,9 +1,9 @@
 <?php
 
+
 class SF_Tools {
     const CURRENT_REST_API_VERSION = 1;
     const PROTOCOL_VERSION = 1;
-
 
     public $server = "localhost";
     public $port = 7777;
@@ -16,16 +16,18 @@ class SF_Tools {
     public $modded = null;
     public $version = null;
     public $api_token = null;
-    private $valid_api = true;
+    private $valid_api = false;
 
     public $game_state = null;
     public $server_options = null;
     public $advanced_game_settings = null;
     public $sessions = null;
+    public $PrivilageLevel = 0;
 
     private $server_link;
-    private $insecure = false;
+    private $secure = false;
     private $url = null;
+    private $curl_options = null;
    
     
     public $error = false;
@@ -34,11 +36,28 @@ class SF_Tools {
 
     public $responce = null;
     public $responce_code = null;
+    public $responce_message = null;
     private $rawResponse = null;
 
+    private $responce_list = [
+        0 => 'No Responce',
+        200 => 'OK',
+        201 => 'Created',
+        202 => 'Accepted',
+        204 => 'No Content',
+        400 => 'Bad Request',
+        401 => 'Unauthorized',
+        403 => 'Forbidden',
+        404 => 'Not Found',
+        405 => 'Method Not Allowed',
+        406 => 'Not Acceptable',
+        409 => 'Conflict',
+        415 => 'Unsupported Media Type',
+        500 => 'Internal Server Error',
+        501 => 'Not Implemented',
+        503 => 'Service Unavailable'
+    ];
 
-    public $PrivilageLevel = 0;
-    
     private $PrivilageLevels = [
         0 => 'NotAuthenticated',
         1 => 'Client',
@@ -65,19 +84,11 @@ class SF_Tools {
     ];
 
 
-    function __construct($server = "localhost", $port = 7777, $insecure = true) {
-        if($this->validate_url("https://$server:$port/api/v1")){
-            $this->url = "https://$server:$port/api/v1";
-            $this->server = $server;
-            $this->port = $port;
-            $this->insecure = $insecure;
-            $this->server_link = curl_init();
-            $this->set_curl_options();
-            $this->Get_LW_server_status();
-        }else{
-            $this->error = true;
-            $this->errormsg = "Invalid URL: https://$server:$port/api/v1 please check the server and port";
-        }
+    function __construct($server = "localhost", $port = 7777, $secure = false) {
+        $this->secure = false;
+        $this->changeServer($server, $port);
+        $this->server_link = curl_init();
+        $this->Get_LW_server_status();
     }
     
     
@@ -87,7 +98,7 @@ class SF_Tools {
 
 
     /**************************************************************************************************************************************
-     * Server Functions
+     * Server Connect Functions
      * 
      * 
      * set_SSL_varify() => set curl to varify the server ssl certificate
@@ -101,34 +112,39 @@ class SF_Tools {
     
 
     // set curl to varify the server ssl certificate
-    public function set_SSL_varify($insecure = false){
-        $this->insecure = $insecure;
+    public function set_SSL_varify($secure = false){
+        $this->secure = $secure;
         $this->set_curl_options();
     }
 
     // change the server and port
     public function changeServer($server, $port = 7777){
-        $this->server = $server;
-        $this->port = $port;
-        $this->url = "https://$server:$port/api/v1";
-        $this->set_curl_options();
+        if($this->validate_url("https://$server:$port/api/v". self::CURRENT_REST_API_VERSION)){
+            $this->url = "https://$server:$port/api/v" . self::CURRENT_REST_API_VERSION;
+            $this->server = $server;
+            $this->port = $port;
+            $this->set_curl_options();
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = "Invalid URL: https://$server:$port/api/v" . self::CURRENT_REST_API_VERSION ." please check the server and port";
+            return false;
+        }
     }
 
     private function set_curl_options(){
-        if($this->insecure){
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYHOST, false);
-        }else{
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYPEER, true);
-            curl_setopt($this->server_link, CURLOPT_SSL_VERIFYHOST, true);
+        $this->curl_options = [
+            CURLOPT_URL => $this->url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_VERBOSE => true,
+            CURLOPT_POST => true
+        ];
+        if(!$this->secure){
+            $this->curl_options[CURLOPT_SSL_VERIFYPEER] = false;
+            $this->curl_options[CURLOPT_SSL_VERIFYHOST] = false;
         }
-        //curl_setopt($this->server_link, CURLOPT_HEADER  , true);
-        //curl_setopt($this->server_link, CURLOPT_NOBODY  , false);
-        curl_setopt($this->server_link, CURLOPT_URL, $this->url);
-        curl_setopt($this->server_link, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($this->server_link, CURLOPT_VERBOSE, true);
-        curl_setopt($this->server_link, CURLOPT_POST, true);
     }
+        
 
     // validate the url (internal function)
     private function validate_url($url){
@@ -138,26 +154,42 @@ class SF_Tools {
             return true;
         }
     }
-
+    
+    
     // fetch data from the api (internal function)
-    private function fetch_from_api($data){
-        if($this->valid_api){
-                curl_setopt($this->server_link, CURLOPT_HTTPHEADER, [
-                    "Authorization: $this->api_token",
-                    "Content-Type: application/json"
-                    ]);
-            }else{
-                curl_setopt($this->server_link, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
-            }
-            curl_setopt($this->server_link, CURLOPT_POSTFIELDS, $data);
-            $this->responce = curl_exec($this->server_link);
-            $this->responce_code = curl_getinfo($this->server_link, CURLINFO_HTTP_CODE);
-            if (curl_errno($this->server_link)) {
-                $this->error = true;
-                return false;
-            } else {
-                return true;
-            }
+    private function fetch_from_api($data, $mustBeAdmin = false){
+        $this->error = false;
+        $this->errormsg = null;
+        curl_reset($this->server_link);
+        If($mustBeAdmin && $this->valid_api && $this->PrivilageLevel < 2){
+            $this->error = true;
+            $this->errormsg = "You must be an admin to perform this action";
+            return false;
+        }
+        
+        
+        $this->curl_options[CURLOPT_HTTPHEADER] = ($this->valid_api)?
+        ["Authorization: Bearer " . $this->api_token, "Content-Type: application/json"]
+        :
+        ["Content-Type: application/json"];
+        $this->curl_options[CURLOPT_POSTFIELDS] =  $data;
+
+        if(!curl_setopt_array($this->server_link, $this->curl_options)){
+            $this->error = true;
+            $this->errormsg = "Failed to set curl options";
+            return false;
+        }
+        
+        $this->responce = curl_exec($this->server_link);
+        $this->responce_code = curl_getinfo($this->server_link, CURLINFO_HTTP_CODE);
+        if (curl_errno($this->server_link)) {
+            $this->error = true;
+            $this->errormsg = curl_error($this->server_link);
+            return false;
+        } else {
+            $this->responce_message = $this->responce_list[$this->responce_code];
+            return true;
+        }
     }
 
 
@@ -178,7 +210,8 @@ class SF_Tools {
      // set the api key used for authentication
      public function setAPIkey($api_key){
         $this->api_token = $api_key;
-        //$this->valid_api = $this->verify_api_key();
+        $this->valid_api = $this->verify_api_key();
+        $this->PrivilageLevel = 4;
     }
 
     private function verify_api_key(){
@@ -187,10 +220,10 @@ class SF_Tools {
             $this->errormsg = "No API key set";
             return false;
         }else{
-            $data = json_encode(["function" => "VerifyAuthentication"]);
+            $data = json_encode(["function" => "VerifyAuthenticationToken"]);
+            $this->valid_api = true;
             $this->fetch_from_api($data);
-            $this->responce_code = curl_getinfo($this->server_link, CURLINFO_HTTP_CODE);
-            if($this->responce_code == 200){
+            if($this->responce_code == 204){
                 return true;
             }else{
                 $this->error = true;
@@ -198,6 +231,19 @@ class SF_Tools {
                 return false;
             }
         }
+    }
+
+    public function clientLogin($password = null){
+        if($password){
+            $sucsess = $this->passwordLogin($password);
+        }else{
+            $sucsess = $this->passwordlessLogin();
+        }
+        ($sucsess)?$this->PrivilageLevel = 1:$this->PrivilageLevel = 0;
+    }
+
+    public function adminLogin($password){
+        ($this->passwordLogin($password, 2))?$this->PrivilageLevel = 2:$this->PrivilageLevel = 0;
     }
 
     public function passwordlessLogin(){
@@ -208,20 +254,22 @@ class SF_Tools {
         $data = json_encode([
             "function" => "PasswordlessLogin",
             "data" => [
-                "minimumPrivilegeLevel" => $this->PrivilageLevels[1]
+                "minimumPrivilegeLevel" => 1
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
             $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
-            //$this->valid_api = $this->verify_api_key();
+            $this->valid_api = $this->verify_api_key();
+            return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
 
-    public function passwordLogin($password){
+    public function passwordLogin($password, $privilage = 1){
         if(isset($this->api_token)){
             $this->api_token = null;
             $this->valid_api = false;
@@ -229,16 +277,18 @@ class SF_Tools {
         $data = json_encode([
             "function" => "PasswordlessLogin",
             "data" => [
-                "minimumPrivilegeLevel" => $this->PrivilageLevels[1],
+                "minimumPrivilegeLevel" => $privilage,
                 "Password" => $password
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+            $this->fetch_from_api($data);
+        if($this->responce_code == 200){
             $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
             $this->valid_api = $this->verify_api_key();
+            return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -255,12 +305,14 @@ class SF_Tools {
                 "AdminPassword" => $adminPassword
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
             $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
-            $this->valid_api = $this->verify_api_key();
+            $this->valid_api = true; //$this->verify_api_key();
+            $this->PrivilageLevel = 3;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -272,11 +324,12 @@ class SF_Tools {
                 "Password" => $password
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -288,18 +341,19 @@ class SF_Tools {
                 "Password" => $password
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
 
 
     /**************************************************************************************************************************************
-     * Server Functions
+     * Server Status Functions
      * 
      * 
      * renameServer($serverName) => rename the server ro $serverName
@@ -314,6 +368,44 @@ class SF_Tools {
      * 
      **************************************************************************************************************************************/
 
+    public function healthCheck($clientData){
+        $data = json_encode([
+            "function" => "HealthCheck",
+            "data" => [
+                "ClientCustomData" => $clientData
+                ]
+            ]);
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
+            return false;
+        }
+    }
+
+    public function CreateNewGame($sessionName, $MapName, $StartingLocation, $SkipOnboarding, $AdvancedGameSettings, $custom_options = null){
+        $data = json_encode([
+            "function" => "CreateNewGame",
+            "data" => [
+                "SessionName" => $sessionName,
+                "MapName" => $MapName,
+                "StartingLocation" => $StartingLocation,
+                "SkipOnboarding" => $SkipOnboarding,
+                "AdvancedGameSettings" => $AdvancedGameSettings,
+                "CustomOptions" => $custom_options
+                ]
+            ]);
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
+            return false;
+        }
+    }
 
     public function renameServer($serverName){
         $data = json_encode([
@@ -322,11 +414,12 @@ class SF_Tools {
                 "ServerName" => $serverName
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+            $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -338,11 +431,12 @@ class SF_Tools {
                 "SessionName" => $sessionName
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -354,11 +448,12 @@ class SF_Tools {
                 "Command" => $command
                 ]
             ]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -367,12 +462,12 @@ class SF_Tools {
         $data = json_encode([
             "function" => "ShutdownServer"
             ]);
-        $this->fetch_from_api($data);
+        $this->fetch_from_api($data, true);
         if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -404,11 +499,15 @@ class SF_Tools {
             return -1;
         } 
         $data = json_encode(["function" => "QueryServerState"]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
             $this->game_state = json_decode($this->responce, true)["data"]["serverGameState"];
+        }elseif (!$this->errormsg){
+            $this->error = true;
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
+            return false;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
             return false;
         }
     }
@@ -434,22 +533,18 @@ class SF_Tools {
             return -1;
         } 
         $data = json_encode(["function" => "GetServerOptions"]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
             $this->server_options = json_decode($this->responce, true)["data"]['serverOptions'];
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
 
     public function setServerOptions(){
         $this->error = 0;
-        if($this->server_state < 1){
-            $this->error = true;
-            $this->errormsg = "Server is offline";
-            return -1;
-        } 
         $jsonarray = [
             'function' => 'ApplyServerOptions',
             'data'  => [
@@ -465,11 +560,12 @@ class SF_Tools {
             
         ];
         $data = json_encode($jsonarray);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = json_decode($this->responce, true);
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
         }
     }
 
@@ -500,12 +596,12 @@ class SF_Tools {
             return -1;
         } 
         $data = json_encode(["function" => "GetAdvancedGameSettings"]);
-        $response = $this->fetch_from_api($data);
-        if($response){
-            $this->advanced_game_settings = json_decode($response, true)["data"]['advancedGameSettings'];
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
+            $this->advanced_game_settings = json_decode($this->responce, true)["data"]['advancedGameSettings'];
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -538,12 +634,12 @@ class SF_Tools {
             
         ];
         $data = json_encode($jsonarray);
-        $response = $this->fetch_from_api($data);
-        if(!$response){
+        $this->fetch_from_api($data);
+        if($this->responce_code == 200){
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = json_decode($response, true);
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -570,12 +666,13 @@ class SF_Tools {
             return -1;
         } 
         $data = json_encode(["function" => "EnumerateSessions"]);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 200){
             $this->sessions = json_decode($this->responce, true)['data']['sessions'];
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = "No Responce from server";
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
@@ -595,19 +692,44 @@ class SF_Tools {
             
         ];
         $data = json_encode($jsonarray);
+        $this->fetch_from_api($data, true);
         if($this->fetch_from_api($data)){
             header('Content-Type: application/octet-stream');
             header('Content-Disposition: attachment; filename="' . $save_name . '.sav"');
-            echo $this->responce;
             return true;
         }else{
             $this->error = true;
-            $this->errormsg = json_decode($this->responce, true);
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
             return false;
         }
     }
 
-    public function uploadSave($save_file, $save_name, $filesize, $LoadSaveGame = false, $EnableAdvancedGameSettings = false){
+    public function deleteSession($sessionName){
+        $this->error = 0;
+        if($this->server_state < 1){
+            $this->error = true;
+            $this->errormsg = "Server is offline";
+            return -1;
+        } 
+        $jsonarray = [
+            'function' => 'DeleteSession',
+            'data'  => [
+                "SessionName" => $sessionName
+            ]
+            
+        ];
+        $data = json_encode($jsonarray);
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 204){
+            return true;
+        }else{
+            $this->error = true;
+            $this->errormsg = json_decode($this->responce, true)['errorMessage'];
+            return false;
+        }
+    }
+
+    public function uploadSave($save_file, $save_name, $LoadSaveGame = false, $EnableAdvancedGameSettings = false){
         $this->error = 0;
         if($this->server_state < 1){
             $this->error = true;
@@ -618,6 +740,9 @@ class SF_Tools {
             $this->errormsg = "File uploads are disabled";
             return -1;
         }
+
+        curl_reset($this->server_link);
+
         $jsonarray = [
             'function' => 'UploadSaveGame',
             'data'  => [
@@ -626,15 +751,21 @@ class SF_Tools {
                 "EnableAdvancedGameSettings" => $EnableAdvancedGameSettings,
             ]
         ];
-        $data = json_encode($jsonarray);
-        $filedata = file_get_contents($save_file);
-        curl_setopt($this->server_link, CURLOPT_HEADER, true);
-        curl_setopt($this->server_link, CURLOPT_HTTPHEADER, [ "Authorization: $this->api_token","Content-Type: multipart/form-data"]);
-        curl_setopt($this->server_link ,CURLOPT_POSTFIELDS, ['data' => $data, 'saveGameFile' => @$save_file]);
-        curl_setopt($this->server_link, CURLOPT_INFILESIZE, $filesize);
-        curl_exec($this->server_link);
-        $this->responce_code = curl_getinfo($this->server_link, CURLINFO_HTTP_CODE);
-        if(curl_exec($this->server_link)){
+
+        if (function_exists('curl_file_create')) { // php 5.5+
+            $post['saveGameFile'] = curl_file_create($save_file['file']['tmp_name'], "application/octet-stream", $save_file['file']['name']);
+        } else { 
+            $post['saveGameFile'] = '@' . realpath($save_file['file']['tmp_name']);
+        }
+        $post['json'] = new CURLFile('data://text/plain,' . json_encode($jsonarray), 'application/json', 'data.json');
+        $this->curl_options[CURLOPT_HTTPHEADER] = [
+            "Content-Type: multipart/form-data",
+            "Authorization: Bearer " . $this->api_token
+        ];
+        $this->curl_options[CURLOPT_POSTFIELDS] = $post;
+        curl_setopt_array($this->server_link, $this->curl_options);
+        $this->responce = curl_exec($this->server_link);
+        if( curl_getinfo($this->server_link, CURLINFO_HTTP_CODE) == 204 ){
             return true;
         }else{
             $this->error = true;
@@ -658,7 +789,8 @@ class SF_Tools {
             
         ];
         $data = json_encode($jsonarray);
-        if($this->fetch_from_api($data)){
+        $this->fetch_from_api($data, true);
+        if($this->responce_code == 204){
             return true;
         }else{
             $this->error = true;
