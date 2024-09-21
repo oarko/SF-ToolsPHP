@@ -57,22 +57,23 @@ require 'config.php';
         $sf_tools = new SF_Tools($server_address, $server_port, true);
 
         // Set an API key (if available)
-        $sf_tools->setAPIkey("Bearer ". $api_key);
+        $sf_tools->setAPIkey($api_key);
+        //$sf_tools->adminLogin("H4yD3st1ny");
 
         // Fetch server state
-        $server_state = $sf_tools->getServerState();
-        
+        $sf_tools->getServerState();
         
         // Display server name
         echo '<div class="card">';
         echo '<div class="card-header"><h2>Server Name</h2></div>';
         echo '<div class="card-body">';
         echo '<p><strong>Server Name:</strong> ' . $sf_tools->name . '</p>';
+        echo '<p><strong>Server version:</strong> ' . $sf_tools->version . '</p>';
         echo '</div></div>';
         
 
         // Display server state
-        if ($server_state !== false) {
+        if (!$sf_tools->error){
             echo '<div class="card">';
             echo '<div class="card-header"><h2>Server State</h2></div>';
             echo '<div class="card-body">';
@@ -136,7 +137,8 @@ require 'config.php';
                     echo '<p><strong>Is Creative Mode Enabled:</strong> ' . ($save['isCreativeModeEnabled'] ? '<span class="indicator-true">Yes</span>' : '<span class="indicator-false">No</span>') . '</p>';
                     echo '<form action="downloadsave.php" method="POST">';
                     echo '<input type="hidden" name="savename" value="' . $save['saveName'] . '">';
-                    echo '<button type="submit" class="btn btn-primary">Download</button>';
+                    echo '<button name="submit" type="submit" value="download "class="btn btn-primary">Download</button>';
+                    echo '<button name="submit" type="submit" value="delete" class="btn btn-primary">Delete</button>';
                     echo '</form>';
                     echo '</div></div>';
                 }
