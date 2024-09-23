@@ -137,7 +137,7 @@ require 'config.php';
                     echo '<p><strong>Is Creative Mode Enabled:</strong> ' . ($save['isCreativeModeEnabled'] ? '<span class="indicator-true">Yes</span>' : '<span class="indicator-false">No</span>') . '</p>';
                     echo '<form action="downloadsave.php" method="POST">';
                     echo '<input type="hidden" name="savename" value="' . $save['saveName'] . '">';
-                    echo '<button name="submit" type="submit" value="download "class="btn btn-primary">Download</button>';
+                    echo '<button name="submit" type="submit" value="download" class="btn btn-primary">Download</button>';
                     echo '<button name="submit" type="submit" value="delete" class="btn btn-primary">Delete</button>';
                     echo '</form>';
                     echo '</div></div>';
