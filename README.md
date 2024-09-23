@@ -234,7 +234,7 @@ $sfTools->downloadSave("myserver save file");
 
 
 #### uplaodSave
-***This function is NOT working at this time.***
+
 Upload a save file to the server
 ```php
 <?php
