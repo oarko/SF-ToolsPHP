@@ -74,8 +74,8 @@ privilage levels should be either  `Client` or  `Administrator`
 $sfTools->passwordLogin({password}, {PrivilageLevel});
 ```
 
-#### clameServer()
-used to clame a server for the first time. Will generate and error if used on a clamed server
+#### claimServer()
+used to claim a server for the first time. Will generate and error if used on a claimed server
 
 ```php
 $sfTools->clameServer({serverName}, {adminPassword});
