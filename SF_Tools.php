@@ -293,7 +293,7 @@ class SF_Tools {
         }
     }
 
-    public function clameServer($serverName, $adminPassword){
+    public function claimServer($serverName, $adminPassword){
         if(isset($this->api_token)){
             $this->api_token = null;
             $this->valid_api = false;
