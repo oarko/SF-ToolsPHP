@@ -48,7 +48,7 @@ The protocol consists of a simple message envelope format used for all messages:
  
 
 ## Poll Server State
-To poll the server construct the message and include a Unique ID as the Payload for the message. The Unique ID can be any Int64 in **_Little Endian_** format. The Game Client uses current time in UE ticks
+To poll the server construct the message and include a Unique ID as the Payload for the message. The Unique ID can be any Int64 in **_Little Endian_** format and will be used to identify the responce message later. The Game Client uses current time in UE ticks
 
 To Poll the server state, the message in hex should look like this:
 | ProtocalMagic | MessageType | ProtocalVersion | UID | TerminatorBit |
