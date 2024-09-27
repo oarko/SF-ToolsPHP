@@ -55,7 +55,7 @@ To Poll the server state, the message in hex should look like this:
 |--|--|--|--|--|
 | D5 F6 | 00 | 01 | 72 D6 F5 66 00 00 00 00 | 01 |
 
-### Server State Response
+## Server State Response
 | Offset (bytes) | Data Type | Name | Description |
 |--|---|---|--------|
 | 0 | uint64 (LE) | UniqueID | The unique identifier for the request that triggered this response. |
@@ -67,13 +67,13 @@ To Poll the server state, the message in hex should look like this:
 | 22+sizeof(SubStates) | uint16 (LE) |ServerNameLength | Length of the ServerName field in bytes |
 | 22+sizeof(SubStates)+1 | uint8[] | ServerName | UTF-8 encoded Server Name, as set by the player |
 
-#### UniqeID (unit64) (LE)
+### UniqeID (unit64) (LE)
 This is the same UID that was used to request the message in **_Little Endian_** format
 example:
 | 8 Bytes (hex) | Example Value (int) |
 |--|--|
 |2F E1 F5 66 00 00 00 00 | 1727389999.546 |
-#### ServerState  (uint8)
+### ServerState  (uint8)
 A single byte denoting the status of the server based on this table:
 | ServerState | Condition | Description |
 |--|---|--------|
@@ -87,22 +87,22 @@ example:
 |--|
 | 03 |
 
-#### ServerNetCL (unet32) (LE)
+### ServerNetCL (unet32) (LE)
 The current version of the Change List the server is running in **_Little Endian_** format.
 | 4 Bytes (hex) | Example Value (int) |
 |--|--|
 | FD 99 05 00 | 367101 |
 
-#### ServerFlags (unet64) (LE)
+### ServerFlags (unet64) (LE)
 A series of 1 bit flags for a total of 64 flags. The first flag is to be set for modded gameplay. The remaining are open for custom settings. These may be set by other mods. When checking flags, it is important to remember they are in **_Little Endian_** format.
 
-#### NumSubStates (uint8)
+### NumSubStates (uint8)
 An integer representing the number of sub states
 | 1 Byte (hex) | Example Value (int) |
 |--|--|
 | 0A | 10|
 
-#### ServerSubState[] (array)
+### ServerSubState[] (array)
 Sub States are used to determine if any changes have occurred on the server side to Reduce the need for TCP calls.
 
 The following sub states are currently defined by the vanilla dedicated server. Sub states that are not known are not invalid, and should instead be silently discarded.
@@ -123,10 +123,10 @@ Example SubState Message
 
 This would indicate that the SaveCollection is at version 248. If re-scanned and the version number has not changed, then No changes have occurred.
 
-## HTTPS API
+# HTTPS API
 Dedicated Server HTTPS API is designed for reliably retrieving data from the running dedicated server instance, and performing server management tasks. It is available when the server has started up and not actively loading a save game or performing a map change. To check for the HTTPS API availability, Lightweight Query API can be used.
 
-### Flow
+## Flow
 A **_POST_** request is made to **https://{serverAddress}/api/v{apiVersion}** with either a **_application/json_** or **_multipart/form-data_**. This is responded to by the server with either a **_application/json_** or an **_application/octet-stream_**.
 
 ## Schema
