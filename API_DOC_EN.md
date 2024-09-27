@@ -120,6 +120,7 @@ Example SubState Message
 | SubStateID | SubStateVersion (hex) | SubStateVersion (int)
 |--|--|--|
 | 03 | F8 00 00 00 | 248 |
+
 This would indicate that the SaveCollection is at version 248. If re-scanned and the version number has not changed, then No changes have occurred.
 
 ## HTTPS API
@@ -141,6 +142,7 @@ Request Object has the following properties:
 |--|--|--------|
 | function | string | Name of the API function to execute. Names of the API functions and their behavior is described below|
 | data | object | Data to pass to the function to execute. Format of the object depends on the function being executed|
+
  An example would look like this:
  ```json
 {
