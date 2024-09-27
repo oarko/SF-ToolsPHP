@@ -17,15 +17,15 @@ Query the Lightweight UDP API and check the ServerSubStates for changes to the s
 
 
 # Lightweight UDP Query API
-Lightweight Query API is a lightweight API designed to allow continuously pulling data from the server and track server state changes.
+Lightweight Query API is a lightweight API designed to allow continuously pulling of data from the server and track server state changes.
 
 ## Flow
 A client sends a message of type Poll Server State to the Server API with it's _UID_ When the server receives the message, it will send the Server State Response message to the relevant client, with the _UID_ value on the response copied from the received request.
 
-A client can continuously poll the server for the updates using that API without using much of server CPU, and investigate the changes in the Server Sub States changelists to determine which subset of information it has cached locally from the HTTPS API could need to be re-fetched from the server.
+A client can continuously poll the server for the updates using that API without using much of server CPU. This information can be used to re-fetch only the data previously cached from the HTTPS API that has become outdated
 
 ## Protocol
-Lightweight Query is a simple request-response UDP protocol with a message-based approach. Note that all data used in the Lightweight Query API is always **_Little Endian_**, and not of network byte order. Since the protocol is UDP, it is unreliable, which means some of the requests might be dropped or not receive responses, so instead of waiting for the responses you should attempt to ping the server with a specific time interval. Be wary of not trying to ping a dead Lightweight Query API for too long though, since you might end up triggering anti-DDoS measures on the host network.
+Lightweight Query is a simple request-response UDP protocol with a message-based approach. Note that all data used in the Lightweight Query API is always **_Little Endian_**, and not of network byte order. Since the protocol is UDP, it is unreliable, which means some of the requests might be dropped or not receive responses. It is recommended that the client should not await a response and should in turn ping the server on a set time schedule. Be wary of not trying to ping a dead Lightweight Query API for too long though, since you might end up triggering anti-DDoS measures on the host network.
 
 The protocol consists of a simple message envelope format used for all messages:
 
@@ -35,7 +35,7 @@ The protocol consists of a simple message envelope format used for all messages:
 |2	|uint8	|MessageType	|Integer value of the Message type|
 |3	|unit8	|ProtocolVersion	|Version of the protocol to be used Current Version is 1 |
 |4	|Any	| Payload | Data Sent/Received based on message type	|
-|
+|3+sizeof(Payload) | uint8 | TerminatiorBit	| Always 0x1. Messages not ending with the terminator byte will be discarded |
 
 
 ### Message Types:
@@ -45,12 +45,14 @@ The protocol consists of a simple message envelope format used for all messages:
 |0	|	Poll Server State |	A request sent to the API to retrieve the information about the current server state|
 |1	| Server State Responce	| A response sent by the server API back to the client containing the current state of the server	|
 
+ 
+
 ## Poll Server State
 To poll the server construct the message and include a Unique ID as the Payload for the message the Unique ID can be any Int64 in **_Little Endian_** format. The Game Client uses current time in UE ticks
 
 To Poll the server state, the message in hex should look like this:
 | ProtocalMagic | MessageType | ProtocalVersion | UID | TerminatorBit |
-|--|--|--|--|--|--|
+|--|--|--|--|--|
 | D5 F6 | 00 | 01 | 72 D6 F5 66 00 00 00 00 | 01 |
 
 ### Server State Response
