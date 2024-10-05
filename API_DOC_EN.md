@@ -38,32 +38,32 @@ Query the Lightweight UDP API and check the ServerSubStates for changes to the s
 - [Authentication](#authentication)
 - [API Functions](#api-functions)
 	- [Authentication Functions](#authentication-functions)
-		- VarifyAuthenticationToken
-		- PasswordlessLogin
-		- PasswordLogin
-		- ClaimServer
-		- SetClientPassword
-		- SetAdminPassword
+		- [VarifyAuthenticationToken](#verifyauthenticationtoken)
+		- [PasswordlessLogin](#passwordlesslogin)
+		- [PasswordLogin](#passwordlogin)
+		- [ClaimServer](#claimserver)
+		- [SetClientPassword](#setclientpassword)
+		- [SetAdminPassword](#setadminpassword)
 	- [Server Functions](#server-functions)
-		- HealthCheck
-		- RunCommand
-		- Shutdown
-		- RenameServer
-		- SetAutoLoadSessionName
-		- QueryServerState
-		- GetServerOptions
-		- ApplyServerOptions
-		- GetAdvancedGameSettings
-		- ApplyAdvancedGameSettings
+		- [HealthCheck](#helthcheck)
+		- [RunCommand](#runcommand)
+		- [Shutdown](#shutdown)
+		- [RenameServer](#renameserver)
+		- [SetAutoLoadSessionName](#setautoloadsessionname)
+		- [QueryServerState](#queryserverstate)
+		- [GetServerOptions](#getserveroptions)
+		- [ApplyServerOptions](#applyserveroptions)
+		- [GetAdvancedGameSettings](#getadvancedgamesettings)
+		- [ApplyAdvancedGameSettings](#applyadvancedgamesettings)
 	- [Save/Session Functions](#savesession-functions)
-		- EnumerateSessions
-		- CreateNewGame
-		- SaveGame
-		- LoadGame
-		- DeleteSaveFile
-		- DeleteSaveSession
-		- DownloadSaveGame
-		- UploadSaveGame
+		- [EnumerateSessions](#enumeratesessions)
+		- [CreateNewGame](#createnewgame)
+		- [SaveGame](#savegame)
+		- [LoadGame](#loadgame)
+		- [DeleteSaveFile](#deletesavefile)
+		- [DeleteSaveSession](#deletesavesession)
+		- [DownloadSaveGame](#downloadsavegame)
+		- [UploadSaveGame](#uploadsavegame)
 
 
 # Lightweight UDP Query API
@@ -217,13 +217,15 @@ Dedicated Server HTTPS API supports the following standard headers:
 
 The following Satisfactory-specific headers can be also be used in the request:
 
-| Header Name | Data Type | Description | | X-FactoryGame-PlayerId | Hex String | Hex-encoded byte array encoding the ID of the player on behalf of which the request is made |
+| Header Name | Data Type | Description |
+|---|---|--------|
+| X-FactoryGame-PlayerId | Hex String | Hex-encoded byte array encoding the ID of the player on behalf of which the request is made |
 
-X-FactoryGame-PlayerId header is only needed to obtain the server join/encryption tickets used for joining the server, and it's format is highly specific to the Satisfactory version running, Unreal Engine version, and the Online Backend used by the player.
+>X-FactoryGame-PlayerId header is only needed to obtain the server join/encryption tickets used for joining the server, and it's format is highly specific to the Satisfactory version running, Unreal Engine version, and the Online Backend used by the player.
+>
+>Generally, first byte of the ID will be type of the Online Backend used (1 for Epic Games Store, 6 for Steam, see values in UE's EOnlineServices type), and the following bytes are specific to the Online Backend, but will generally represent the player account ID. For Steam for example, it would be a big-endian uint64 representing the player's SteamID64, and for Epic, it would be HEX-encoded EOS ProductUserId string.
 
-Generally, first byte of the ID will be type of the Online Backend used (1 for Epic Games Store, 6 for Steam, see values in UE's EOnlineServices type), and the following bytes are specific to the Online Backend, but will generally represent the player account ID. For Steam for example, it would be a big-endian uint64 representing the player's SteamID64, and for Epic, it would be HEX-encoded EOS ProductUserId string.
-
-Example:
+cRUL command line example of a request:
 ```bash
 $ curl --insecure -v -H "Content-Type:application/json"\
 -H "Authorization:Bearer xxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\
@@ -238,7 +240,7 @@ Multipart Part named "data" should be present in **all** multipart requests, and
 
 Names of other multipart attachments are specific to the functions using multipart requests. Currently multipart requests are only used by `UploadSaveGame` function for uploading save game files.
 
-Example:
+cRUL command line example of a multipart request:
 ```bash
 $ curl --insecure -v -H "Content-Type:multipart/form-data"\
 -H "Authorization:Bearer xxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\
@@ -342,7 +344,8 @@ Authentication requirement can be lifted for locally running Dedicated Server in
 ### Authentication Functions
 
 - #### VerifyAuthenticationToken
-minimum authentication level: [NotAuthenticated](#authentication)
+	- minimum authentication level: [NotAuthenticated](#authentication)
+	- Status Code on success: **204**
 
 >Verifies the Authentication token provided to the Dedicated Server API. Returns No Content and the response code of 204 if the provided token is valid. This function does not require input parameters and does not return any data.
 
@@ -354,7 +357,8 @@ example:
 ```
 ---
 - #### PasswordlessLogin
-minimum authentication level: [NotAuthenticated](#authentication)
+	- minimum authentication level: [NotAuthenticated](#authentication)
+	- Status Code on success: **204**
 
 >Attempts to perform a passwordless login to the Dedicated Server as a player. Passwordless login is possible if the Dedicated Server is not claimed, or if Client Protection Password is not set for the Dedicated Server. This function requires no Authentication.
 
@@ -367,9 +371,9 @@ example:
 ```json
 {
 "function":"PasswordlessLogin",
-"data":[
+"data":{
 	"MinimumPrivilageLevel": "Client"
-	]
+	}
 }
 ```
  Function Response Data:
@@ -394,14 +398,16 @@ Possible errors:
 example:
 ```json
 {
-"data":[
+"data":{
 	"errorCode":"passwordless_login_not_possible"
 	"errorMessage":"Passwordless login is not currently possible for this Dedicated Server"
-	]
+	}
 }
 ```
+---
 - #### PasswordLogin
-minimum authentication level: [NotAuthenticated](#authentication)
+	- minimum authentication level: [NotAuthenticated](#authentication)
+	- Status Code on success: **204**
 
 >Attempts to log in to the Dedicated Server as a player using either Admin Password or Client Protection Password. This function requires no Authentication.
 
@@ -415,10 +421,10 @@ example:
 ```json
 {
 "function":"PasswordLogin",
-"data":[
+"data":{
 	"MinimumPrivilageLevel": "Administrator",
 	"Password":"MyPassword"
-	]
+	}
 }
 ```
 Function Response Data:
@@ -429,9 +435,9 @@ Function Response Data:
 example:
 ```json
 {
-"data":[
+"data":{
 	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-	]
+	}
 }
 ```
 Possible errors:
@@ -442,14 +448,16 @@ Possible errors:
 example:
 ```json
 {
-"data":[
+"data":{
 	"errorCode":"wrong_password"
 	"errorMessage":"Provided Password did not match any of the passwords set for this Dedicated Server"
-	]
+	}
 }
 ```
+---
 - #### ClaimServer
-minimum authentication level: [InitialAdmin](#authentication)
+	- minimum authentication level: [InitialAdmin](#authentication)
+	- Status Code on success: **204**
 
 >Claims this Dedicated Server if it is not claimed. Requires InitialAdmin privilege level, which can only be acquired by attempting [PasswordlessLogin](#passwordlesslogin) while the server does not have an Admin Password set, e.g. it is not claimed yet. Function does not return any data in case of success, and the server is claimed. The client should drop InitialAdmin privileges after that and use returned AuthenticationToken instead, and update it's cached server game state by calling [QueryServerState](#QueryServerState).
 
@@ -463,10 +471,10 @@ example:
 ```json
 {
 "function":"ClaimServer",
-"data":[
+"data":{
 	"ServerName": "My Satisfactory Server",
 	"AdminPassword":"MyPassword"
-	]
+	}
 }
 ```
 Function Response Data:
@@ -477,9 +485,9 @@ Function Response Data:
 example:
 ```json
 {
-"data":[
+"data":{
 	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-	]
+	}
 }
 ```
 Possible errors:
@@ -491,14 +499,16 @@ Possible errors:
 example:
 ```json
 {
-"data":[
+"data":{
 	"errorCode":"server_claimed"
 	"errorMessage":"Server has already been claimed"
-	]
+	}
 }
 ```
+---
 - #### SetClientPassword
-minimum authentication level: [Administrator](#authentication)
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
 
 >Updates the currently set Client Protection Password. **This will invalidate all previously issued Client authentication tokens.** Pass empty string to remove the password, and let anyone join the server as Client. Function does not return any data on success and returns response code 204 on success.
 
@@ -511,9 +521,9 @@ example:
 ```json
 {
 "function":"SetClientPassword",
-"data":[
+"data":{
 	"Password":"MyPassword"
-	]
+	}
 }
 ```
 Possible errors:
@@ -522,9 +532,10 @@ Possible errors:
 | server_not_claimed | Server has not been claimed yet. Use ClaimServer function instead before calling SetClientPassword |
 | insufficient_scope | The client is missing required privileges to access the given function |
 | password_in_use | Same password is already used as Admin Password |
-
+---
 - #### SetAdminPassword
-minimum authentication level: [Administrator](#authentication)
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
 
 >Updates the currently set Admin Password. This will invalidate all previously issued Client and Admin authentication tokens. Requires Admin privileges. Function does not return any data and returns and response code 204 on success.
 
@@ -545,8 +556,9 @@ Possible errors:
 ---
 ## Server Functions
 
-#### HelthCheck
-minimum authentication level: [NotAuthenticated](#authentication)
+- #### HelthCheck
+	- minimum authentication level: [NotAuthenticated](#authentication)
+	- Status Code on success: **200**
 
 > Performs a health check on the Dedicated Server API. Allows passing additional data between Modded Dedicated Server and Modded Game Client.
 
@@ -559,9 +571,9 @@ Function Request Data:
 ```json
 {
 "function":"HelthCheck",
-"data": [
+"data": {
 		"ClientCustomData": ""
-		]
+		}
 }
 ```
 Function Response Data:
@@ -573,14 +585,16 @@ Function Response Data:
 Example:
 ```json
 {
-"data":[
+"data":{
 	"Health":"healthy",
 	"ServerCustomData":""
-	]
+	}
 }
 ```
+---
 - #### RunCommand
-minimum authentication level: [Administrator](#authentication)
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **200**
 >Runs the given Console Command on the Dedicated Server, and returns it's output to the Console. Requires Admin privileges.
 
 Function Request Data:
@@ -592,24 +606,279 @@ Function Response Data:
 | Property Name | Property Type | Description |
 |---|---|--------|
 | CommandResult | string | Output of the command executed, with \n used as line separator |
-
+---
 - #### Shutdown
+	- minimum authentication level: [Administrator](#authentication)
 
 >Shuts down the Dedicated Server. If automatic restart script is setup, this allows restarting the server to apply new settings or update. Requires Admin privileges. Shutdowns initiated by remote hosts are logged with their IP and their token. Function does not return any data on success, and does not take any parameters.
-
+---
 - #### RenameServer
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Renames the Dedicated Server once it has been claimed. Requires Admin privileges. Function does not return any data on success.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|---------|
+| ServerName | string | New name of the Dedicated Server |
+
+Possible errors:
+| Error Code | Description | 
+|---|-----|
+| server_not_claimed | Server has not been claimed yet. Use ClaimServer function instead |
+| insufficient_scope | The client is missing required privileges to access the given function |
+---
 - #### SetAutoLoadSessionName
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Updates the name of the session that the Dedicated Server will automatically load on startup. Does not change currently loaded session. Requires Admin privileges. Function does not return any data on success.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|----|---------|
+| SessionName | string | Name of the session to automatically load on Dedicated Server startup |
+
+---
 - #### QueryServerState
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Retrieves the current state of the Dedicated Server. Does not require any input parameters.
+
+Function Response Data:
+| Property Name | Property Type | Description | 
+|---|---|------|
+| ServerGameState | string | Current game state of the server |
+
+ServerGameState:
+| Property Name | Property Type | Description |
+|---|---|---------|
+| ActiveSessionName | string | Name of the currently loaded game session |
+| NumConnectedPlayers | integer | Number of the players currently connected to the Dedicated Server |
+| PlayerLimit | integer | Maximum number of the players that can be connected to the Dedicated Server |
+| TechTier | integer | Maximum Tech Tier of all Schematics currently unlocked |
+| ActiveSchematic | string | Schematic currently set as Active Milestone |
+| GamePhase | string | Current game phase. None if no game is running |
+| IsGameRunning | boolean | True if the save is currently loaded, false if the server is waiting for the session to be created |
+| TotalGameDuration | integer | Total time the current save has been loaded, in seconds |
+| IsGamePaused | boolean | True if the game is paused. If the game is paused, total game duration does not increase|
+| AverageTickRate | float | Average tick rate of the server, in ticks per second |
+| AutoLoadSessionName | string | Name of the session that will be loaded when the server starts automatically|
+
+Example:
+```json
+{
+"data":{
+	"serverGameState":{
+		"activeSessionName":"TestSession",
+		"numConnectedPlayers":1,
+		"playerLimit":4,
+		"techTier":2,
+		"activeSchematic":"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Schematics/Progression/Schematic_1-1.Schematic_1-1_C'",
+		"gamePhase":"/Script/FactoryGame.FGGamePhase'/Game/FactoryGame/GamePhases/GP_Project_Assembly_Phase_0.GP_Project_Assembly_Phase_0'",
+		"isGameRunning":true,
+		"totalGameDuration":14964,
+		"isGamePaused":false,
+		"averageTickRate":29.927627563476562,
+		"autoLoadSessionName":"TestSession"
+		}
+	}
+}
+```
+---
 - #### GetServerOptions
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Retrieves currently applied server options and server options that are still pending application (because of needing session or server restart) Does not require input parameters.
+
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| ServerOptions | map<string, string> | All current server option values. Key is the name of the option, and value is it's stringified value|
+| PendingServerOptions | map<string, string> | Server option values that will be applied when the session or server restarts|
+
+Example:
+```json
+{
+"data":{
+	"serverOptions":{
+		"FG.DSAutoPause":"False",
+		"FG.DSAutoSaveOnDisconnect":"False",
+		"FG.AutosaveInterval":"300.0",
+		"FG.ServerRestartTimeSlot":"1440.0",
+		"FG.SendGameplayData":"False",
+		"FG.NetworkQuality":"1"
+		},
+	"pendingServerOptions":{
+		}
+	}
+}
+```
+---
 - #### ApplyServerOptions
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Applies new Server Options to the Dedicated Server. Requires Admin privileges. Function does not return any data on success.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|-------|
+| UpdatedServerOptions | map<string, string> | Key is the name of the Server Option, and the Value is the new value as string|
+
+example:
+```json
+{
+"function":"ApplyServerOptions",
+"data":{
+	"UpdatedServerOptions":{
+		"FG.DSAutoPause": "true",
+		"FG.DSAutoSaveOnDisconnect":"true"
+		}
+	}
+}
+```
+---
 - #### GetAdvancedGameSettings
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Retrieves currently applied advanced game settings. Does not require input parameters.
+
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|---------|
+| CreativeModeEnabled | boolean | True if Advanced Game Settings are enabled for the currently loaded session |
+| AdvancedGameSettings | map<string, string> | Values of Advanced Game Settings. Key is the name of the setting, and value is it's stringified value|
+
+Example:
+```json
+{
+"data":{
+	"creativeModeEnabled":false,
+	"advancedGameSettings":{
+		"FG.GameRules.NoPower":"False",
+		"FG.GameRules.DisableArachnidCreatures":"False",
+		"FG.GameRules.NoUnlockCost":"False",
+		"FG.GameRules.SetGamePhase":"0",
+		"FG.GameRules.GiveAllTiers":"False",
+		"FG.GameRules.UnlockAllResearchSchematics":"False",
+		"FG.GameRules.UnlockInstantAltRecipes":"False",
+		"FG.GameRules.UnlockAllResourceSinkSchematics":"False",
+		"FG.GameRules.GiveItems":"Empty",
+		"FG.PlayerRules.NoBuildCost":"False",
+		"FG.PlayerRules.GodMode":"False",
+		"FG.PlayerRules.FlightMode":"False"
+		}
+	}
+}
+```
+
+---
 - #### ApplyAdvancedGameSettings
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Applies new values to the provided Advanced Game Settings properties. Will automatically enable Advanced Game Settings for the currently loaded save if they are not enabled already.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| AppliedAdvancedGameSettings | map<string, string> | Key is the name of the Advanced Game Setting, and the Value is the new setting value as string |
+
+Examle:
+```json
+{
+"function":"ApplyAdvancedGameSettings",
+"data":{
+	"AppliedAdvancedGameSettings":{
+		"FG.GameRules.NoPower":"False",
+		"FG.GameRules.DisableArachnidCreatures":"False",
+		"FG.GameRules.NoUnlockCost":"False",
+		"FG.GameRules.SetGamePhase":"0",
+		"FG.GameRules.GiveAllTiers":"False",
+		"FG.GameRules.UnlockAllResearchSchematics":"False",
+		"FG.GameRules.UnlockInstantAltRecipes":"False",
+		"FG.GameRules.UnlockAllResourceSinkSchematics":"False",
+		"FG.GameRules.GiveItems":"Empty",
+		"FG.PlayerRules.NoBuildCost":"False",
+		"FG.PlayerRules.GodMode":"False",
+		"FG.PlayerRules.FlightMode":"False"
+		}
+	}
+}
+```
+
+---
 ### Save/Session Functions
 - #### EnumerateSessions
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+
+---
 - #### CreateNewGame
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+>Creates a new session on the Dedicated Server, and immediately loads it. HTTPS API becomes temporarily unavailable when map loading is in progress | Function does not return any data on success.
+
+| Property Name | Property Type | Description |
+|---|---|--------|
+| NewGameData | ServerNewGameData | Parameters needed to create new game session |
+
+ServerNewGameData:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| SessionName | string | Name of the session to create |
+| MapName | string | Path Name to the Map Package to use as a map. If not specified, default level "Persistent_Level" |
+| StartingLocation | string | Name of the starting location to use. Leaving it empty will use random starting location base game options are `"Grass Fields", "DuneDesert", "Rocky Desert", "Northern Forest"`|
+| bSkipOnboarding | boolean | Whenever the Onboarding should be skipped. Currently Onboarding is always skipped on the Dedicated Servers |
+| AdvancedGameSettings | map<string, string> | Advanced Game Settings to apply to the newly created session |
+| CustomOptionsOnlyForModding | map<string, string> | Custom Options to pass to the newly created session URL. Not used by vanilla Dedicated Servers|
+
+**NOTE: Dune Desert starting location does NOT have a space in its name at time of writing.**
+
+Example:
+```json
+{
+"function": "CreateNewGame"
+"data":{
+	"SessionName": "TestSession",
+	"MapName": "Persistent_Level",
+	"StartingLocation": "Grass Fields",
+	"bSkipOnboarding": true,
+	"AdvancedGameSettings":{
+		"FG.GameRules.NoPower":"False",
+		"FG.GameRules.DisableArachnidCreatures":"False"
+		}
+	"CustomOptionsOnlyForModding":{
+		"customOption1":"addmod"
+		}
+	}
+}
+```
+
+---
 - #### SaveGame
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+
+---
 - #### LoadGame
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+
+---
 - #### DeleteSaveFile
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+
+---
 - #### DeleteSaveSession
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+
+---
 - #### DownloadSaveGame
+	- minimum authentication level: [Administrator](#authentication)
+	- Status Code on success: **204**
+
+---
 - #### UploadSaveGame
+
+---
