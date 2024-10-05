@@ -1,5 +1,5 @@
 # Satisfactory Dedicated Server API
-updated 9/26/24
+updated 10/5/24
 
 # Introduction
 Dedicated Server API consists of two separate endpoints, both operating on the same port as the game server, which is normally *7777*. If the server port is changed (through Engine.ini configuration file, or through `-Port=` command line argument), the API will listen on the specified port instead.
