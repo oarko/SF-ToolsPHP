@@ -15,6 +15,50 @@ Lightweight Server Query API is available at all times when the server is runnin
 ### Usage
 Query the Lightweight UDP API and check the ServerSubStates for changes to the server, Then use the HTTPS API to collect the changes.
 
+# Contents
+### [Lightweight UDP Query API ](#lightweight-udp-query-api)
+ - [Flow](#flow)
+ - [Protocol](#Protocol)
+ - Message Types
+	 - Poll Server State
+	 -  Server State Responce
+ ### HTTP API
+- Flow
+	 - Schema
+	 - Request Schema
+	- Multipart Requests
+	- Response Schema
+	- File Responces
+	- Certificate Validation and Encryption
+- API Functions
+	- Authentication Functions
+		- VarifyAuthenticationToken
+		- PasswordlessLogin
+		- PasswordLogin
+		- ClaimServer
+		- SetClientPassword
+		- SetAdminPassword
+	- Server Commands
+		- HealthCheck
+		- RunCommand
+		- Shutdown
+		- RenameServer
+		- SetAutoLoadSessionName
+		- QueryServerState
+		- GetServerOptions
+		- ApplyServerOptions
+		- GetAdvancedGameSettings
+		- ApplyAdvancedGameSettings
+	- Save/Session Functions
+		- EnumerateSessions
+		- CreateNewGame
+		- SaveGame
+		- LoadGame
+		- DeleteSaveFile
+		- DeleteSaveSession
+		- DownloadSaveGame
+		- UploadSaveGame
+
 
 # Lightweight UDP Query API
 Lightweight Query API is a lightweight API designed to allow continuously pulling of data from the server and track server state changes.
@@ -48,14 +92,14 @@ The protocol consists of a simple message envelope format used for all messages:
  
 
 ## Poll Server State
-To poll the server construct the message and include a Unique ID as the Payload for the message. The Unique ID can be any Int64 in **_Little Endian_** format and will be used to identify the responce message later. The Game Client uses current time in UE ticks
+To poll the server construct the message and include a Unique ID as the Payload for the message. The Unique ID can be any Int64 in **_Little Endian_** format. The Game Client uses current time in UE ticks
 
 To Poll the server state, the message in hex should look like this:
 | ProtocalMagic | MessageType | ProtocalVersion | UID | TerminatorBit |
 |--|--|--|--|--|
 | D5 F6 | 00 | 01 | 72 D6 F5 66 00 00 00 00 | 01 |
 
-## Server State Response
+### Server State Response
 | Offset (bytes) | Data Type | Name | Description |
 |--|---|---|--------|
 | 0 | uint64 (LE) | UniqueID | The unique identifier for the request that triggered this response. |
@@ -67,13 +111,13 @@ To Poll the server state, the message in hex should look like this:
 | 22+sizeof(SubStates) | uint16 (LE) |ServerNameLength | Length of the ServerName field in bytes |
 | 22+sizeof(SubStates)+1 | uint8[] | ServerName | UTF-8 encoded Server Name, as set by the player |
 
-### UniqeID (unit64) (LE)
+#### UniqeID (unit64) (LE)
 This is the same UID that was used to request the message in **_Little Endian_** format
 example:
 | 8 Bytes (hex) | Example Value (int) |
 |--|--|
 |2F E1 F5 66 00 00 00 00 | 1727389999.546 |
-### ServerState  (uint8)
+#### ServerState  (uint8)
 A single byte denoting the status of the server based on this table:
 | ServerState | Condition | Description |
 |--|---|--------|
@@ -87,22 +131,22 @@ example:
 |--|
 | 03 |
 
-### ServerNetCL (unet32) (LE)
+#### ServerNetCL (unet32) (LE)
 The current version of the Change List the server is running in **_Little Endian_** format.
 | 4 Bytes (hex) | Example Value (int) |
 |--|--|
 | FD 99 05 00 | 367101 |
 
-### ServerFlags (unet64) (LE)
+#### ServerFlags (unet64) (LE)
 A series of 1 bit flags for a total of 64 flags. The first flag is to be set for modded gameplay. The remaining are open for custom settings. These may be set by other mods. When checking flags, it is important to remember they are in **_Little Endian_** format.
 
-### NumSubStates (uint8)
+#### NumSubStates (uint8)
 An integer representing the number of sub states
 | 1 Byte (hex) | Example Value (int) |
 |--|--|
 | 0A | 10|
 
-### ServerSubState[] (array)
+#### ServerSubState[] (array)
 Sub States are used to determine if any changes have occurred on the server side to Reduce the need for TCP calls.
 
 The following sub states are currently defined by the vanilla dedicated server. Sub states that are not known are not invalid, and should instead be silently discarded.
@@ -283,3 +327,243 @@ Application tokens generated previously can still be pruned using `server.Invali
 Authentication requirement can be lifted for locally running Dedicated Server instances serving on the loopback network adapter. To allow unrestricted Dedicated Server API access on the localhost, set `FG.DedicatedServer.AllowInsecureLocalAccess` console variable to `1`. It can be performed automatically using the following command line argument: `-ini:Engine:[SystemSettings]:FG.DedicatedServer.AllowInsecureLocalAccess=1`
 
 ## API Functions
+
+### HelthCheck
+minimum authentication level: [NotAuthenticated](#authentication)
+
+Performs a health check on the Dedicated Server API. Allows passing additional data between Modded Dedicated Server and Modded Game Client.
+
+Function Request Data:
+| Property Name | Property Type | Description | 
+|---|---|------|
+| ClientCustomData | string | Custom Data passed from the Game Client or Third Party service. Not used by vanilla Dedicated Servers |
+
+Example:
+```json
+{
+"function":"HelthCheck",
+"data": [
+		"ClientCustomData": ""
+		]
+}
+```
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|-----|
+|Health | string | "healthy" if tick rate is above ten ticks per second, "slow" otherwise |
+| ServerCustomData | string | Custom Data passed from the Dedicated Server to the Game Client or Third Party service. Vanilla Dedicated Server returns empty string |
+Example:
+```json
+{
+"data":[
+	"Health":"healthy",
+	"ServerCustomData":""
+	]
+}
+```
+
+### VerifyAuthenticationToken
+minimum authentication level: [NotAuthenticated](#authentication)
+
+Verifies the Authentication token provided to the Dedicated Server API. Returns No Content and the response code of 204 if the provided token is valid. This function does not require input parameters and does not return any data.
+```json
+{
+"function":"VerifyAuthenticationToken"
+}
+```
+### PasswordlessLogin
+minimum authentication level: [NotAuthenticated](#authentication)
+
+Attempts to perform a passwordless login to the Dedicated Server as a player. Passwordless login is possible if the Dedicated Server is not claimed, or if Client Protection Password is not set for the Dedicated Server. This function requires no Authentication.
+
+Function Request Data:
+| Property Name | Property Type | Description | 
+|---|---|--------|
+| MinimumPrivilegeLevel | string | Minimum privilege level to attempt to acquire by logging in. See Privilege Level enum for possible values |
+example:
+```json
+{
+"function":"PasswordlessLogin",
+"data":[
+	"MinimumPrivilageLevel": "Client"
+	]
+}
+```
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| AuthenticationToken | string | Authentication Token in case login is successful |
+example:
+```json
+{
+"data":[
+	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	]
+}
+```
+
+Possible errors:
+| Error Code | Description |
+|---|--------|
+| passwordless_login_not_possible | Passwordless login is not currently possible for this Dedicated Server |
+example:
+```json
+{
+"data":[
+	"errorCode":"passwordless_login_not_possible"
+	"errorMessage":"Passwordless login is not currently possible for this Dedicated Server"
+	]
+}
+```
+### PasswordLogin
+minimum authentication level: [NotAuthenticated](#authentication)
+
+Attempts to log in to the Dedicated Server as a player using either Admin Password or Client Protection Password. This function requires no Authentication.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| MinimumPrivilegeLevel | string |Minimum privilege level to attempt to acquire by logging in. See Privilege Level enum for possible values |
+| Password | string | Password to attempt to log in with, in plaintext |
+example:
+```json
+{
+"function":"PasswordLogin",
+"data":[
+	"MinimumPrivilageLevel": "Administrator",
+	"Password":"MyPassword"
+	]
+}
+```
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| AuthenticationToken | string | Authentication Token in case login is successful |
+example:
+```json
+{
+"data":[
+	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	]
+}
+```
+Possible errors:
+| Error Code | Description | 
+|---|--------|
+| wrong_password | Provided Password did not match any of the passwords set for this Dedicated Server |
+example:
+```json
+{
+"data":[
+	"errorCode":"wrong_password"
+	"errorMessage":"Provided Password did not match any of the passwords set for this Dedicated Server"
+	]
+}
+```
+### ClaimServer
+minimum authentication level: [InitialAdmin](#authentication)
+
+Claims this Dedicated Server if it is not claimed. Requires InitialAdmin privilege level, which can only be acquired by attempting [PasswordlessLogin](#passwordlesslogin) while the server does not have an Admin Password set, e.g. it is not claimed yet. Function does not return any data in case of success, and the server is claimed. The client should drop InitialAdmin privileges after that and use returned AuthenticationToken instead, and update it's cached server game state by calling [QueryServerState](#QueryServerState).
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| ServerName | string | New name of the Dedicated Server |
+| AdminPassword | string | Admin Password to set on the Dedicated Server, in plaintext |
+example:
+```json
+{
+"function":"ClaimServer",
+"data":[
+	"ServerName": "My Satisfactory Server",
+	"AdminPassword":"MyPassword"
+	]
+}
+```
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| AuthenticationToken | string | New Authentication Token that the Caller should use to drop Initial Admin privileges |
+example:
+```json
+{
+"data":[
+	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	]
+}
+```
+Possible errors:
+| Error Code | Description | 
+|---|-----|
+| server_claimed | Server has already been claimed |
+| insufficient_scope | The client is missing required privileges to access the given function |
+example:
+```json
+{
+"data":[
+	"errorCode":"server_claimed"
+	"errorMessage":"Server has already been claimed"
+	]
+}
+```
+### SetClientPassword
+minimum authentication level: [Administrator](#authentication)
+
+Updates the currently set Client Protection Password. **This will invalidate all previously issued Client authentication tokens.** Pass empty string to remove the password, and let anyone join the server as Client. Function does not return any data on success and returns response code 204 on success.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| Password | string | Client Password to set on the Dedicated Server, in plaintext |
+example:
+```json
+{
+"function":"SetClientPassword",
+"data":[
+	"Password":"MyPassword"
+	]
+}
+```
+Possible errors:
+| Error Code | Description | 
+|---|--------|
+| server_not_claimed | Server has not been claimed yet. Use ClaimServer function instead before calling SetClientPassword |
+| insufficient_scope | The client is missing required privileges to access the given function |
+| password_in_use | Same password is already used as Admin Password |
+
+### SetAdminPassword
+minimum authentication level: [Administrator](#authentication)
+
+Updates the currently set Admin Password. This will invalidate all previously issued Client and Admin authentication tokens. Requires Admin privileges. Function does not return any data and returns and response code 204 on success.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| Password | string | Admin Password to set on the Dedicated Server, in plaintext
+| AuthenticationToken | string | New Admin authentication token to use, since the token used for this request will become invalidated|
+
+Possible errors:
+| Error Code | Description | 
+|---|--------|
+| server_not_claimed | Server has not been claimed yet. Use ClaimServer function instead
+| cannot_reset_admin_password | Attempt to set Password to empty string. Admin Password cannot be reset
+| password_in_use | Same password is already used as Client Protection Password |
+| insufficient_scope | The client is missing required privileges to access the given function |
+
+### RunCommand
+minimum authentication level: [Administrator](#authentication)
+Runs the given Console Command on the Dedicated Server, and returns it's output to the Console. Requires Admin privileges.
+
+Function Request Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| Command | string |Command Line to run on the Dedicated Server|
+
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|--------|
+| CommandResult | string | Output of the command executed, with \n used as line separator |
+
+### Shutdown
+
+Shuts down the Dedicated Server. If automatic restart script is setup, this allows restarting the server to apply new settings or update. Requires Admin privileges. Shutdowns initiated by remote hosts are logged with their IP and their token. Function does not return any data on success, and does not take any parameters.
