@@ -352,7 +352,7 @@ Authentication requirement can be lifted for locally running Dedicated Server in
 example:
 ```json
 {
-"function":"VerifyAuthenticationToken"
+	"function":"VerifyAuthenticationToken"
 }
 ```
 ---
@@ -370,9 +370,9 @@ Function Request Data:
 example:
 ```json
 {
-"function":"PasswordlessLogin",
-"data":{
-	"MinimumPrivilageLevel": "Client"
+	"function":"PasswordlessLogin",
+	"data":{
+		"MinimumPrivilegeLevel": "Client"
 	}
 }
 ```
@@ -384,9 +384,9 @@ example:
 example:
 ```json
 {
-"data":[
-	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-	]
+	"data":{
+		"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	}
 }
 ```
 
@@ -398,9 +398,9 @@ Possible errors:
 example:
 ```json
 {
-"data":{
-	"errorCode":"passwordless_login_not_possible"
-	"errorMessage":"Passwordless login is not currently possible for this Dedicated Server"
+	"data":{
+		"errorCode":"passwordless_login_not_possible"
+		"errorMessage":"Passwordless login is not currently possible for this Dedicated Server"
 	}
 }
 ```
@@ -420,10 +420,10 @@ Function Request Data:
 example:
 ```json
 {
-"function":"PasswordLogin",
-"data":{
-	"MinimumPrivilageLevel": "Administrator",
-	"Password":"MyPassword"
+	"function":"PasswordLogin",
+	"data":{
+		"MinimumPrivilegeLevel": "Administrator",
+		"Password":"MyPassword"
 	}
 }
 ```
@@ -435,8 +435,8 @@ Function Response Data:
 example:
 ```json
 {
-"data":{
-	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	"data":{
+		"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 	}
 }
 ```
@@ -448,9 +448,9 @@ Possible errors:
 example:
 ```json
 {
-"data":{
-	"errorCode":"wrong_password"
-	"errorMessage":"Provided Password did not match any of the passwords set for this Dedicated Server"
+	"data":{
+		"errorCode":"wrong_password"
+		"errorMessage":"Provided Password did not match any of the passwords set for this Dedicated Server"
 	}
 }
 ```
@@ -470,10 +470,10 @@ Function Request Data:
 example:
 ```json
 {
-"function":"ClaimServer",
-"data":{
-	"ServerName": "My Satisfactory Server",
-	"AdminPassword":"MyPassword"
+	"function":"ClaimServer",
+	"data":{
+		"ServerName": "My Satisfactory Server",
+		"AdminPassword":"MyPassword"
 	}
 }
 ```
@@ -485,8 +485,8 @@ Function Response Data:
 example:
 ```json
 {
-"data":{
-	"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	"data":{
+		"AuthenticationToken":"xxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 	}
 }
 ```
@@ -499,9 +499,9 @@ Possible errors:
 example:
 ```json
 {
-"data":{
-	"errorCode":"server_claimed"
-	"errorMessage":"Server has already been claimed"
+	"data":{
+		"errorCode":"server_claimed"
+		"errorMessage":"Server has already been claimed"
 	}
 }
 ```
@@ -520,9 +520,9 @@ Function Request Data:
 example:
 ```json
 {
-"function":"SetClientPassword",
-"data":{
-	"Password":"MyPassword"
+	"function":"SetClientPassword",
+	"data":{
+		"Password":"MyPassword"
 	}
 }
 ```
@@ -570,10 +570,10 @@ Function Request Data:
 	Example:
 ```json
 {
-"function":"HelthCheck",
-"data": {
+	"function":"HelthCheck",
+	"data": {
 		"ClientCustomData": ""
-		}
+	}
 }
 ```
 Function Response Data:
@@ -585,9 +585,9 @@ Function Response Data:
 Example:
 ```json
 {
-"data":{
-	"Health":"healthy",
-	"ServerCustomData":""
+	"data":{
+		"Health":"healthy",
+		"ServerCustomData":""
 	}
 }
 ```
@@ -667,19 +667,19 @@ ServerGameState:
 Example:
 ```json
 {
-"data":{
-	"serverGameState":{
-		"activeSessionName":"TestSession",
-		"numConnectedPlayers":1,
-		"playerLimit":4,
-		"techTier":2,
-		"activeSchematic":"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Schematics/Progression/Schematic_1-1.Schematic_1-1_C'",
-		"gamePhase":"/Script/FactoryGame.FGGamePhase'/Game/FactoryGame/GamePhases/GP_Project_Assembly_Phase_0.GP_Project_Assembly_Phase_0'",
-		"isGameRunning":true,
-		"totalGameDuration":14964,
-		"isGamePaused":false,
-		"averageTickRate":29.927627563476562,
-		"autoLoadSessionName":"TestSession"
+	"data":{
+		"serverGameState":{
+			"activeSessionName":"TestSession",
+			"numConnectedPlayers":1,
+			"playerLimit":4,
+			"techTier":2,
+			"activeSchematic":"/Script/Engine.BlueprintGeneratedClass'/Game/FactoryGame/Schematics/Progression/Schematic_1-1.Schematic_1-1_C'",
+			"gamePhase":"/Script/FactoryGame.FGGamePhase'/Game/FactoryGame/GamePhases/GP_Project_Assembly_Phase_0.GP_Project_Assembly_Phase_0'",
+			"isGameRunning":true,
+			"totalGameDuration":14964,
+			"isGamePaused":false,
+			"averageTickRate":29.927627563476562,
+			"autoLoadSessionName":"TestSession"
 		}
 	}
 }
@@ -699,16 +699,16 @@ Function Response Data:
 Example:
 ```json
 {
-"data":{
-	"serverOptions":{
-		"FG.DSAutoPause":"False",
-		"FG.DSAutoSaveOnDisconnect":"False",
-		"FG.AutosaveInterval":"300.0",
-		"FG.ServerRestartTimeSlot":"1440.0",
-		"FG.SendGameplayData":"False",
-		"FG.NetworkQuality":"1"
+	"data":{
+		"serverOptions":{
+			"FG.DSAutoPause":"False",
+			"FG.DSAutoSaveOnDisconnect":"False",
+			"FG.AutosaveInterval":"300.0",
+			"FG.ServerRestartTimeSlot":"1440.0",
+			"FG.SendGameplayData":"False",
+			"FG.NetworkQuality":"1"
 		},
-	"pendingServerOptions":{
+		"pendingServerOptions":{
 		}
 	}
 }
@@ -727,12 +727,12 @@ Function Request Data:
 example:
 ```json
 {
-"function":"ApplyServerOptions",
-"data":{
-	"UpdatedServerOptions":{
-		"FG.DSAutoPause": "true",
-		"FG.DSAutoSaveOnDisconnect":"true"
-		}
+	"function":"ApplyServerOptions",
+	"data":{
+		"UpdatedServerOptions":{
+			"FG.DSAutoPause": "true",
+			"FG.DSAutoSaveOnDisconnect":"true"
+			}
 	}
 }
 ```
@@ -751,21 +751,21 @@ Function Response Data:
 Example:
 ```json
 {
-"data":{
-	"creativeModeEnabled":false,
-	"advancedGameSettings":{
-		"FG.GameRules.NoPower":"False",
-		"FG.GameRules.DisableArachnidCreatures":"False",
-		"FG.GameRules.NoUnlockCost":"False",
-		"FG.GameRules.SetGamePhase":"0",
-		"FG.GameRules.GiveAllTiers":"False",
-		"FG.GameRules.UnlockAllResearchSchematics":"False",
-		"FG.GameRules.UnlockInstantAltRecipes":"False",
-		"FG.GameRules.UnlockAllResourceSinkSchematics":"False",
-		"FG.GameRules.GiveItems":"Empty",
-		"FG.PlayerRules.NoBuildCost":"False",
-		"FG.PlayerRules.GodMode":"False",
-		"FG.PlayerRules.FlightMode":"False"
+	"data":{
+		"creativeModeEnabled":false,
+		"advancedGameSettings":{
+			"FG.GameRules.NoPower":"False",
+			"FG.GameRules.DisableArachnidCreatures":"False",
+			"FG.GameRules.NoUnlockCost":"False",
+			"FG.GameRules.SetGamePhase":"0",
+			"FG.GameRules.GiveAllTiers":"False",
+			"FG.GameRules.UnlockAllResearchSchematics":"False",
+			"FG.GameRules.UnlockInstantAltRecipes":"False",
+			"FG.GameRules.UnlockAllResourceSinkSchematics":"False",
+			"FG.GameRules.GiveItems":"Empty",
+			"FG.PlayerRules.NoBuildCost":"False",
+			"FG.PlayerRules.GodMode":"False",
+			"FG.PlayerRules.FlightMode":"False"
 		}
 	}
 }
@@ -785,21 +785,21 @@ Function Request Data:
 Examle:
 ```json
 {
-"function":"ApplyAdvancedGameSettings",
-"data":{
-	"AppliedAdvancedGameSettings":{
-		"FG.GameRules.NoPower":"False",
-		"FG.GameRules.DisableArachnidCreatures":"False",
-		"FG.GameRules.NoUnlockCost":"False",
-		"FG.GameRules.SetGamePhase":"0",
-		"FG.GameRules.GiveAllTiers":"False",
-		"FG.GameRules.UnlockAllResearchSchematics":"False",
-		"FG.GameRules.UnlockInstantAltRecipes":"False",
-		"FG.GameRules.UnlockAllResourceSinkSchematics":"False",
-		"FG.GameRules.GiveItems":"Empty",
-		"FG.PlayerRules.NoBuildCost":"False",
-		"FG.PlayerRules.GodMode":"False",
-		"FG.PlayerRules.FlightMode":"False"
+	"function":"ApplyAdvancedGameSettings",
+	"data":{
+		"AppliedAdvancedGameSettings":{
+			"FG.GameRules.NoPower":"False",
+			"FG.GameRules.DisableArachnidCreatures":"False",
+			"FG.GameRules.NoUnlockCost":"False",
+			"FG.GameRules.SetGamePhase":"0",
+			"FG.GameRules.GiveAllTiers":"False",
+			"FG.GameRules.UnlockAllResearchSchematics":"False",
+			"FG.GameRules.UnlockInstantAltRecipes":"False",
+			"FG.GameRules.UnlockAllResourceSinkSchematics":"False",
+			"FG.GameRules.GiveItems":"Empty",
+			"FG.PlayerRules.NoBuildCost":"False",
+			"FG.PlayerRules.GodMode":"False",
+			"FG.PlayerRules.FlightMode":"False"
 		}
 	}
 }
@@ -836,18 +836,18 @@ ServerNewGameData:
 Example:
 ```json
 {
-"function": "CreateNewGame"
-"data":{
-	"SessionName": "TestSession",
-	"MapName": "Persistent_Level",
-	"StartingLocation": "Grass Fields",
-	"bSkipOnboarding": true,
-	"AdvancedGameSettings":{
-		"FG.GameRules.NoPower":"False",
-		"FG.GameRules.DisableArachnidCreatures":"False"
+	"function": "CreateNewGame"
+	"data":{
+		"SessionName": "TestSession",
+		"MapName": "Persistent_Level",
+		"StartingLocation": "Grass Fields",
+		"bSkipOnboarding": true,
+		"AdvancedGameSettings":{
+			"FG.GameRules.NoPower":"False",
+			"FG.GameRules.DisableArachnidCreatures":"False"
 		}
-	"CustomOptionsOnlyForModding":{
-		"customOption1":"addmod"
+		"CustomOptionsOnlyForModding":{
+			"customOption1":"addmod"
 		}
 	}
 }
