@@ -410,6 +410,7 @@ Function Request Data:
 |---|---|--------|
 | MinimumPrivilegeLevel | string |Minimum privilege level to attempt to acquire by logging in. See Privilege Level enum for possible values |
 | Password | string | Password to attempt to log in with, in plaintext |
+
 example:
 ```json
 {
@@ -424,6 +425,7 @@ Function Response Data:
 | Property Name | Property Type | Description |
 |---|---|--------|
 | AuthenticationToken | string | Authentication Token in case login is successful |
+
 example:
 ```json
 {
@@ -436,6 +438,7 @@ Possible errors:
 | Error Code | Description | 
 |---|--------|
 | wrong_password | Provided Password did not match any of the passwords set for this Dedicated Server |
+
 example:
 ```json
 {
@@ -455,6 +458,7 @@ Function Request Data:
 |---|---|--------|
 | ServerName | string | New name of the Dedicated Server |
 | AdminPassword | string | Admin Password to set on the Dedicated Server, in plaintext |
+
 example:
 ```json
 {
@@ -469,6 +473,7 @@ Function Response Data:
 | Property Name | Property Type | Description |
 |---|---|--------|
 | AuthenticationToken | string | New Authentication Token that the Caller should use to drop Initial Admin privileges |
+
 example:
 ```json
 {
@@ -482,6 +487,7 @@ Possible errors:
 |---|-----|
 | server_claimed | Server has already been claimed |
 | insufficient_scope | The client is missing required privileges to access the given function |
+
 example:
 ```json
 {
@@ -500,6 +506,7 @@ Function Request Data:
 | Property Name | Property Type | Description |
 |---|---|--------|
 | Password | string | Client Password to set on the Dedicated Server, in plaintext |
+
 example:
 ```json
 {
@@ -562,6 +569,7 @@ Function Response Data:
 |---|---|-----|
 |Health | string | "healthy" if tick rate is above ten ticks per second, "slow" otherwise |
 | ServerCustomData | string | Custom Data passed from the Dedicated Server to the Game Client or Third Party service. Vanilla Dedicated Server returns empty string |
+
 Example:
 ```json
 {
