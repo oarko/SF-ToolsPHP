@@ -29,21 +29,22 @@ Query the Lightweight UDP API and check the ServerSubStates for changes to the s
 		 - [ServerSubState](#serversubstate-array)
  ### HTTP API
 - [Flow](#flow-1)
-	 - [Schema](#schema)
-	 - Request Schema
-	- Multipart Requests
-	- Response Schema
-	- File Responces
-	- Certificate Validation and Encryption
-- API Functions
-	- Authentication Functions
+ - [Schema](#schema)
+	 - [Request Schema](#request-schema)
+	- [Multipart Requests](#multipart-requests)
+	- [Response Schema](#response-schema)
+	- [File Responses](#file-responses])
+- [Certificate Validation and Encryption](#certificate-validation-and-encryption)
+- [Authentication](#authentication)
+- [API Functions](#api-functions)
+	- [Authentication Functions](#authentication-functions)
 		- VarifyAuthenticationToken
 		- PasswordlessLogin
 		- PasswordLogin
 		- ClaimServer
 		- SetClientPassword
 		- SetAdminPassword
-	- Server Commands
+	- [Server Functions](#server-functions)
 		- HealthCheck
 		- RunCommand
 		- Shutdown
@@ -54,7 +55,7 @@ Query the Lightweight UDP API and check the ServerSubStates for changes to the s
 		- ApplyServerOptions
 		- GetAdvancedGameSettings
 		- ApplyAdvancedGameSettings
-	- Save/Session Functions
+	- [Save/Session Functions](#savesession-functions)
 		- EnumerateSessions
 		- CreateNewGame
 		- SaveGame
