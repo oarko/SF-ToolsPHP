@@ -19,12 +19,17 @@ Query the Lightweight UDP API and check the ServerSubStates for changes to the s
 ### [Lightweight UDP Query API ](#lightweight-udp-query-api)
  - [Flow](#flow)
  - [Protocol](#Protocol)
- - Message Types
-	 - Poll Server State
-	 -  Server State Responce
+ - [Message Types](#Message-Types)
+	 - [Poll Server State](#poll-server-state)
+	 -  [Server State Responce](#server-state-response)
+		 - [UniqeID](#uniqeid-unit64-le)
+		 - [ServerState](#serverstate--uint8)
+		 - [ServerNetCL](#servernetcl-unet32-le)
+		 - [ServerFlags](#serverflags-unet64-le)
+		 - [ServerSubState](#serversubstate-array)
  ### HTTP API
 - [Flow](#flow-1)
-	 - Schema
+	 - [Schema](#schema)
 	 - Request Schema
 	- Multipart Requests
 	- Response Schema
@@ -64,12 +69,14 @@ Query the Lightweight UDP API and check the ServerSubStates for changes to the s
 Lightweight Query API is a lightweight API designed to allow continuously pulling of data from the server and track server state changes.
 
 ## Flow
-A client sends a message of type Poll Server State to the Server API with it's _UID_ When the server receives the message, it will send the Server State Response message to the relevant client, with the _UID_ value on the response copied from the received request.
+>A client sends a message of type Poll Server State to the Server API with it's _UID_ When the server receives the message, it will send the Server State Response message to the relevant client, with the _UID_ value on the response copied from the received request.
+>
+>A client can continuously poll the server for the updates using that API without using much of server CPU. This information can be used to re-fetch only the data previously cached from the HTTPS API that has become outdated
 
-A client can continuously poll the server for the updates using that API without using much of server CPU. This information can be used to re-fetch only the data previously cached from the HTTPS API that has become outdated
+---
 
 ## Protocol
-Lightweight Query is a simple request-response UDP protocol with a message-based approach. Note that all data used in the Lightweight Query API is always **_Little Endian_**, and not of network byte order. Since the protocol is UDP, it is unreliable, which means some of the requests might be dropped or not receive responses. It is recommended that the client should not await a response and should in turn ping the server on a set time schedule. Be wary of not trying to ping a dead Lightweight Query API for too long though, since you might end up triggering anti-DDoS measures on the host network.
+>Lightweight Query is a simple request-response UDP protocol with a message-based approach. Note that all data used in the Lightweight Query API is always **_Little Endian_**, and not of network byte order. Since the protocol is UDP, it is unreliable, which means some of the requests might be dropped or not receive responses. It is recommended that the client should not await a response and should in turn ping the server on a set time schedule. Be wary of not trying to ping a dead Lightweight Query API for too long though, since you might end up triggering anti-DDoS measures on the host network.
 
 The protocol consists of a simple message envelope format used for all messages:
 
@@ -92,7 +99,7 @@ The protocol consists of a simple message envelope format used for all messages:
  
 
 ## Poll Server State
-To poll the server construct the message and include a Unique ID as the Payload for the message. The Unique ID can be any Int64 in **_Little Endian_** format. The Game Client uses current time in UE ticks
+>To poll the server construct the message and include a Unique ID as the Payload for the message. The Unique ID can be any Int64 in **_Little Endian_** format. The Game Client uses current time in UE ticks
 
 To Poll the server state, the message in hex should look like this:
 | ProtocalMagic | MessageType | ProtocalVersion | UID | TerminatorBit |
@@ -112,13 +119,15 @@ To Poll the server state, the message in hex should look like this:
 | 22+sizeof(SubStates)+1 | uint8[] | ServerName | UTF-8 encoded Server Name, as set by the player |
 
 #### UniqeID (unit64) (LE)
-This is the same UID that was used to request the message in **_Little Endian_** format
-example:
+>This is the same UID that was used to request the message in **_Little Endian_** format
+
+Example:
 | 8 Bytes (hex) | Example Value (int) |
 |--|--|
 |2F E1 F5 66 00 00 00 00 | 1727389999.546 |
 #### ServerState  (uint8)
-A single byte denoting the status of the server based on this table:
+>A single byte denoting the status of the server based on this table:
+
 | ServerState | Condition | Description |
 |--|---|--------|
 | 0 | Offline | The server is offline. Servers will never send this as a response |
@@ -126,30 +135,32 @@ A single byte denoting the status of the server based on this table:
 | 2 | Loading | The server is currently loading a map. In this state, HTTPS API is unavailable |
 | 3 | Playing | The server is running, and a save is loaded. Server is joinable by players |
 
-example:
+Example:
 | 1 Byte |
 |--|
 | 03 |
 
 #### ServerNetCL (unet32) (LE)
-The current version of the Change List the server is running in **_Little Endian_** format.
+>The current version of the Change List the server is running in **_Little Endian_** format.
+
 | 4 Bytes (hex) | Example Value (int) |
 |--|--|
 | FD 99 05 00 | 367101 |
 
 #### ServerFlags (unet64) (LE)
-A series of 1 bit flags for a total of 64 flags. The first flag is to be set for modded gameplay. The remaining are open for custom settings. These may be set by other mods. When checking flags, it is important to remember they are in **_Little Endian_** format.
+>A series of 1 bit flags for a total of 64 flags. The first flag is to be set for modded gameplay. The remaining are open for custom settings. These may be set by other mods. When checking flags, it is important to remember they are in **_Little Endian_** format.
 
 #### NumSubStates (uint8)
-An integer representing the number of sub states
+>An integer representing the number of sub states
+
 | 1 Byte (hex) | Example Value (int) |
 |--|--|
 | 0A | 10|
 
 #### ServerSubState[] (array)
-Sub States are used to determine if any changes have occurred on the server side to Reduce the need for TCP calls.
-
-The following sub states are currently defined by the vanilla dedicated server. Sub states that are not known are not invalid, and should instead be silently discarded.
+>Sub States are used to determine if any changes have occurred on the server side to Reduce the need for TCP calls.
+>
+>The following sub states are currently defined by the vanilla dedicated server. Sub states that are not known are not invalid, and should instead be silently discarded.
 
 | Sub State ID | Sub State Name |  Description |
 |--|---|--------|
@@ -170,7 +181,7 @@ This would indicate that the SaveCollection is at version 248. If re-scanned and
 # HTTPS API
 Dedicated Server HTTPS API is designed for reliably retrieving data from the running dedicated server instance, and performing server management tasks. It is available when the server has started up and not actively loading a save game or performing a map change. To check for the HTTPS API availability, Lightweight Query API can be used.
 
-## Flow
+### Flow
 A **_POST_** request is made to **https://{serverAddress}/api/v{apiVersion}** with either a **_application/json_** or **_multipart/form-data_**. This is responded to by the server with either a **_application/json_** or an **_application/octet-stream_**.
 
 ## Schema
@@ -327,59 +338,30 @@ Application tokens generated previously can still be pruned using `server.Invali
 Authentication requirement can be lifted for locally running Dedicated Server instances serving on the loopback network adapter. To allow unrestricted Dedicated Server API access on the localhost, set `FG.DedicatedServer.AllowInsecureLocalAccess` console variable to `1`. It can be performed automatically using the following command line argument: `-ini:Engine:[SystemSettings]:FG.DedicatedServer.AllowInsecureLocalAccess=1`
 
 ## API Functions
+### Authentication Functions
 
-### HelthCheck
+- #### VerifyAuthenticationToken
 minimum authentication level: [NotAuthenticated](#authentication)
 
-Performs a health check on the Dedicated Server API. Allows passing additional data between Modded Dedicated Server and Modded Game Client.
+>Verifies the Authentication token provided to the Dedicated Server API. Returns No Content and the response code of 204 if the provided token is valid. This function does not require input parameters and does not return any data.
 
-Function Request Data:
-| Property Name | Property Type | Description | 
-|---|---|------|
-| ClientCustomData | string | Custom Data passed from the Game Client or Third Party service. Not used by vanilla Dedicated Servers |
-
-Example:
-```json
-{
-"function":"HelthCheck",
-"data": [
-		"ClientCustomData": ""
-		]
-}
-```
-Function Response Data:
-| Property Name | Property Type | Description |
-|---|---|-----|
-|Health | string | "healthy" if tick rate is above ten ticks per second, "slow" otherwise |
-| ServerCustomData | string | Custom Data passed from the Dedicated Server to the Game Client or Third Party service. Vanilla Dedicated Server returns empty string |
-Example:
-```json
-{
-"data":[
-	"Health":"healthy",
-	"ServerCustomData":""
-	]
-}
-```
-
-### VerifyAuthenticationToken
-minimum authentication level: [NotAuthenticated](#authentication)
-
-Verifies the Authentication token provided to the Dedicated Server API. Returns No Content and the response code of 204 if the provided token is valid. This function does not require input parameters and does not return any data.
+example:
 ```json
 {
 "function":"VerifyAuthenticationToken"
 }
 ```
-### PasswordlessLogin
+---
+- #### PasswordlessLogin
 minimum authentication level: [NotAuthenticated](#authentication)
 
-Attempts to perform a passwordless login to the Dedicated Server as a player. Passwordless login is possible if the Dedicated Server is not claimed, or if Client Protection Password is not set for the Dedicated Server. This function requires no Authentication.
+>Attempts to perform a passwordless login to the Dedicated Server as a player. Passwordless login is possible if the Dedicated Server is not claimed, or if Client Protection Password is not set for the Dedicated Server. This function requires no Authentication.
 
 Function Request Data:
 | Property Name | Property Type | Description | 
 |---|---|--------|
 | MinimumPrivilegeLevel | string | Minimum privilege level to attempt to acquire by logging in. See Privilege Level enum for possible values |
+
 example:
 ```json
 {
@@ -389,10 +371,11 @@ example:
 	]
 }
 ```
-Function Response Data:
+ Function Response Data:
 | Property Name | Property Type | Description |
 |---|---|--------|
 | AuthenticationToken | string | Authentication Token in case login is successful |
+
 example:
 ```json
 {
@@ -406,6 +389,7 @@ Possible errors:
 | Error Code | Description |
 |---|--------|
 | passwordless_login_not_possible | Passwordless login is not currently possible for this Dedicated Server |
+
 example:
 ```json
 {
@@ -415,10 +399,10 @@ example:
 	]
 }
 ```
-### PasswordLogin
+- #### PasswordLogin
 minimum authentication level: [NotAuthenticated](#authentication)
 
-Attempts to log in to the Dedicated Server as a player using either Admin Password or Client Protection Password. This function requires no Authentication.
+>Attempts to log in to the Dedicated Server as a player using either Admin Password or Client Protection Password. This function requires no Authentication.
 
 Function Request Data:
 | Property Name | Property Type | Description |
@@ -460,10 +444,10 @@ example:
 	]
 }
 ```
-### ClaimServer
+- #### ClaimServer
 minimum authentication level: [InitialAdmin](#authentication)
 
-Claims this Dedicated Server if it is not claimed. Requires InitialAdmin privilege level, which can only be acquired by attempting [PasswordlessLogin](#passwordlesslogin) while the server does not have an Admin Password set, e.g. it is not claimed yet. Function does not return any data in case of success, and the server is claimed. The client should drop InitialAdmin privileges after that and use returned AuthenticationToken instead, and update it's cached server game state by calling [QueryServerState](#QueryServerState).
+>Claims this Dedicated Server if it is not claimed. Requires InitialAdmin privilege level, which can only be acquired by attempting [PasswordlessLogin](#passwordlesslogin) while the server does not have an Admin Password set, e.g. it is not claimed yet. Function does not return any data in case of success, and the server is claimed. The client should drop InitialAdmin privileges after that and use returned AuthenticationToken instead, and update it's cached server game state by calling [QueryServerState](#QueryServerState).
 
 Function Request Data:
 | Property Name | Property Type | Description |
@@ -506,10 +490,10 @@ example:
 	]
 }
 ```
-### SetClientPassword
+- #### SetClientPassword
 minimum authentication level: [Administrator](#authentication)
 
-Updates the currently set Client Protection Password. **This will invalidate all previously issued Client authentication tokens.** Pass empty string to remove the password, and let anyone join the server as Client. Function does not return any data on success and returns response code 204 on success.
+>Updates the currently set Client Protection Password. **This will invalidate all previously issued Client authentication tokens.** Pass empty string to remove the password, and let anyone join the server as Client. Function does not return any data on success and returns response code 204 on success.
 
 Function Request Data:
 | Property Name | Property Type | Description |
@@ -531,10 +515,10 @@ Possible errors:
 | insufficient_scope | The client is missing required privileges to access the given function |
 | password_in_use | Same password is already used as Admin Password |
 
-### SetAdminPassword
+- #### SetAdminPassword
 minimum authentication level: [Administrator](#authentication)
 
-Updates the currently set Admin Password. This will invalidate all previously issued Client and Admin authentication tokens. Requires Admin privileges. Function does not return any data and returns and response code 204 on success.
+>Updates the currently set Admin Password. This will invalidate all previously issued Client and Admin authentication tokens. Requires Admin privileges. Function does not return any data and returns and response code 204 on success.
 
 Function Request Data:
 | Property Name | Property Type | Description |
@@ -550,9 +534,45 @@ Possible errors:
 | password_in_use | Same password is already used as Client Protection Password |
 | insufficient_scope | The client is missing required privileges to access the given function |
 
-### RunCommand
+---
+## Server Functions
+
+#### HelthCheck
+minimum authentication level: [NotAuthenticated](#authentication)
+
+> Performs a health check on the Dedicated Server API. Allows passing additional data between Modded Dedicated Server and Modded Game Client.
+
+Function Request Data:
+| Property Name | Property Type | Description | 
+|---|---|------|
+| ClientCustomData | string | Custom Data passed from the Game Client or Third Party service. Not used by vanilla Dedicated Servers |
+
+	Example:
+```json
+{
+"function":"HelthCheck",
+"data": [
+		"ClientCustomData": ""
+		]
+}
+```
+Function Response Data:
+| Property Name | Property Type | Description |
+|---|---|-----|
+|Health | string | "healthy" if tick rate is above ten ticks per second, "slow" otherwise |
+| ServerCustomData | string | Custom Data passed from the Dedicated Server to the Game Client or Third Party service. Vanilla Dedicated Server returns empty string |
+Example:
+```json
+{
+"data":[
+	"Health":"healthy",
+	"ServerCustomData":""
+	]
+}
+```
+- #### RunCommand
 minimum authentication level: [Administrator](#authentication)
-Runs the given Console Command on the Dedicated Server, and returns it's output to the Console. Requires Admin privileges.
+>Runs the given Console Command on the Dedicated Server, and returns it's output to the Console. Requires Admin privileges.
 
 Function Request Data:
 | Property Name | Property Type | Description |
@@ -564,6 +584,23 @@ Function Response Data:
 |---|---|--------|
 | CommandResult | string | Output of the command executed, with \n used as line separator |
 
-### Shutdown
+- #### Shutdown
 
-Shuts down the Dedicated Server. If automatic restart script is setup, this allows restarting the server to apply new settings or update. Requires Admin privileges. Shutdowns initiated by remote hosts are logged with their IP and their token. Function does not return any data on success, and does not take any parameters.
+>Shuts down the Dedicated Server. If automatic restart script is setup, this allows restarting the server to apply new settings or update. Requires Admin privileges. Shutdowns initiated by remote hosts are logged with their IP and their token. Function does not return any data on success, and does not take any parameters.
+
+- #### RenameServer
+- #### SetAutoLoadSessionName
+- #### QueryServerState
+- #### GetServerOptions
+- #### ApplyServerOptions
+- #### GetAdvancedGameSettings
+- #### ApplyAdvancedGameSettings
+### Save/Session Functions
+- #### EnumerateSessions
+- #### CreateNewGame
+- #### SaveGame
+- #### LoadGame
+- #### DeleteSaveFile
+- #### DeleteSaveSession
+- #### DownloadSaveGame
+- #### UploadSaveGame
