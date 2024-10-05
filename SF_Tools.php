@@ -290,7 +290,7 @@ class SF_Tools {
     }
 
     public function adminLogin($password){
-        ($this->passwordLogin($password, 2))?$this->PrivilageLevel = 2:$this->PrivilageLevel = 0;
+        ($this->passwordLogin($password, "Administrator"))?$this->PrivilageLevel = 2:$this->PrivilageLevel = 0;
     }
 
     public function passwordlessLogin(){
@@ -327,22 +327,23 @@ class SF_Tools {
             $this->valid_api = false;
         }
         $data = json_encode([
-            "function" => "PasswordlessLogin",
+            "function" => "PasswordLogin",
             "data" => [
                 "minimumPrivilegeLevel" => $privilage,
                 "Password" => $password
                 ]
             ]);
-            $this->fetch_from_api($data);
-        if($this->responce_code == 200){
+            $this->fetch_from_api($data);           
+        if(!$this->error){
             $this->api_token = json_decode($this->responce, true)["data"]["authenticationToken"];
-            $this->valid_api = $this->verify_api_key();
-            return true;
+            if($this->valid_api = $this->verify_api_key())
+                return true;
         }else{
             $this->error = true;
             $this->errormsg = $this->errorDecode(__FUNCTION__);
             return false;
         }
+        return false;
     }
 
     public function clameServer($serverName, $adminPassword){
@@ -387,7 +388,7 @@ class SF_Tools {
                 ]
             ]);
         $this->fetch_from_api($data, true);
-        if($this->responce_code == 200){
+        if($this->responce_code == 204){
             return true;
         }else{
             $this->error = true;
@@ -443,7 +444,7 @@ class SF_Tools {
                 ]
             ]);
         $this->fetch_from_api($data);
-        if($this->responce_code == 200){
+        if($this->responce_code == 204){
             return true;
         }else{
             $this->error = true;
@@ -933,6 +934,7 @@ class SF_Tools {
     }
 
     private function errorDecode($function){
+        print_r($this->responce);
         $errorJson = json_decode($this->responce, true)['errorMessage'];
         $errormsg = $function . " failed with the following error: ";
         $errormsg .= $errorJson;
